@@ -147,6 +147,82 @@ export default function App() {
   const removeProgram = (id) => { setPrograms(prev => prev.filter(p => p.id !== id)); showToast("Program removed", "warn"); };
   const forceCheck = () => { const reset = programs.map(p => ({ ...p, lastChecked: null })); setPrograms(reset); runStatusCheck(reset, reset); };
 
+  // --- Scraper state ---
+  const [scrapeUrls, setScrapeUrls] = useState("");
+  const [scrapeResults, setScrapeResults] = useState([]); // [{url, status, program, error}]
+  const [scraping, setScraping] = useState(false);
+  const [scrapeProgress, setScrapeProgress] = useState({ done: 0, total: 0, current: "" });
+
+  const runScraper = async () => {
+    const urls = scrapeUrls.split(/[\n,]+/).map(u => u.trim()).filter(u => u.startsWith("http"));
+    if (urls.length === 0) return;
+    setScraping(true);
+    setScrapeResults([]);
+    setScrapeProgress({ done: 0, total: urls.length, current: "" });
+
+    const results = [];
+    for (let i = 0; i < urls.length; i++) {
+      const url = urls[i];
+      setScrapeProgress({ done: i, total: urls.length, current: url });
+      let result = { url, status: "processing", program: null, error: null };
+
+      try {
+        // Step 1: fetch the page via our proxy
+        const fetchRes = await fetch("/api/fetch-url", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url }),
+        });
+        const { html, error: fetchError } = await fetchRes.json();
+
+        if (fetchError || !html) {
+          result = { url, status: "error", error: fetchError || "Could not fetch page", program: null };
+        } else {
+          // Step 2: ask Claude to extract recycling program details
+          const raw = await callClaude(
+            [{ role: "user", content: `Extract recycling/take-back program details from this webpage text. URL: ${url}\n\nPage content:\n${html}\n\nReturn JSON only with these exact fields (use null if not found):\n{"company":"","program":"","category":"","items":"comma separated keywords of accepted items for search","itemsNot":"","cost":"Free or describe cost","reward":"discount or reward offered or None","whatHappens":"what the company does with collected items","howTo":"how to participate","notes":"website and any key notes"}\n\nIf this page does not describe a recycling or take-back program, return: {"notAProgram": true}` }],
+            `You are extracting Australian recycling program data. Return ONLY valid JSON. Be thorough with the "items" field — use many descriptive keywords so the program is discoverable via search. Category must be one of: Cookware, Electronics / Stationery, Beauty / Personal Care, Clothing / Textiles, Hard-to-Recycle, Batteries, Beverage Containers, Pharmaceuticals, Other.`
+          );
+          const clean = raw.replace(/```json|```/g, "").trim();
+          const extracted = JSON.parse(clean);
+
+          if (extracted.notAProgram) {
+            result = { url, status: "not_a_program", error: "No recycling program found on this page", program: null };
+          } else {
+            result = {
+              url,
+              status: "extracted",
+              error: null,
+              program: { ...extracted, id: `scraped-${Date.now()}-${i}`, verified: false, status: "active", lastChecked: null, submittedBy: "scraper", submittedAt: new Date().toISOString() }
+            };
+          }
+        }
+      } catch (err) {
+        result = { url, status: "error", error: err.message, program: null };
+      }
+
+      results.push(result);
+      setScrapeResults([...results]);
+      await new Promise(r => setTimeout(r, 500));
+    }
+
+    setScrapeProgress({ done: urls.length, total: urls.length, current: "" });
+    setScraping(false);
+  };
+
+  const addScrapedProgram = (program) => {
+    setPrograms(prev => [...prev, program]);
+    setScrapeResults(prev => prev.map(r => r.program?.id === program.id ? { ...r, status: "added" } : r));
+    showToast(`${program.company} added to database ✓`);
+  };
+
+  const addAllScraped = () => {
+    const toAdd = scrapeResults.filter(r => r.status === "extracted" && r.program);
+    toAdd.forEach(r => setPrograms(prev => [...prev, r.program]));
+    setScrapeResults(prev => prev.map(r => r.status === "extracted" ? { ...r, status: "added" } : r));
+    showToast(`${toAdd.length} programs added to database ✓`);
+  };
+
   const unverified = programs.filter(p => !p.verified);
   const flagged = programs.filter(p => p.status === "possibly_inactive");
 
@@ -207,6 +283,7 @@ export default function App() {
           <nav style={{ display: "flex", gap: 6, background: "#fff", border: "1.5px solid #dde8dd", borderRadius: 14, padding: 5 }}>
             <button className={`nav-btn${view === "search" ? " active" : ""}`} onClick={() => setView("search")}>🔍 Search</button>
             <button className={`nav-btn${view === "submit" ? " active" : ""}`} onClick={() => setView("submit")}>＋ Add Program</button>
+            <button className={`nav-btn${view === "scraper" ? " active" : ""}`} onClick={() => setView("scraper")}>🌐 Scraper</button>
             <button className={`nav-btn${view === "admin" ? " active" : ""}`} onClick={() => setView("admin")}>
               🛡 Admin
               {(unverified.length + flagged.length) > 0 && (
@@ -317,6 +394,132 @@ export default function App() {
             <button className="submit-btn" style={{ marginTop: 24 }} disabled={submitting || !form.company || !form.program || !form.category || !form.items} onClick={submitProgram}>
               {submitting ? "Submitting…" : "Submit program →"}
             </button>
+          </div>
+        )}
+
+        {/* SCRAPER */}
+        {view === "scraper" && (
+          <div className="fade-in">
+            <div style={{ marginBottom: 24 }}>
+              <h2 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: "1.5rem", color: "#2d6a2d" }}>🌐 URL Scraper</h2>
+              <p style={{ color: "#6b7280", fontSize: "0.88rem", marginTop: 6, lineHeight: 1.6 }}>
+                Paste URLs of recycling program pages — one per line. Claude will visit each page, extract the program details, and let you add them to your database.
+              </p>
+            </div>
+
+            <div style={{ background: "#fff", border: "1.5px solid #dde8dd", borderRadius: 14, padding: 20, marginBottom: 20 }}>
+              <div className="field" style={{ marginBottom: 14 }}>
+                <label>URLs to scrape — one per line</label>
+                <textarea
+                  value={scrapeUrls}
+                  onChange={e => setScrapeUrls(e.target.value)}
+                  placeholder={"https://www.officeworks.com.au/information/about-us/recycling\nhttps://www.mecca.com.au/beauty-loop/recycling\nhttps://www.hm.com/au/sustainability/garment-collecting"}
+                  style={{ minHeight: 140, fontFamily: "monospace", fontSize: "0.82rem" }}
+                  disabled={scraping}
+                />
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                <button
+                  className="submit-btn"
+                  onClick={runScraper}
+                  disabled={scraping || !scrapeUrls.trim()}
+                >
+                  {scraping ? `Scraping ${scrapeProgress.done + 1}/${scrapeProgress.total}…` : "▶ Start scraping"}
+                </button>
+                {!scraping && scrapeUrls && (
+                  <span style={{ fontSize: "0.8rem", color: "#6b7280" }}>
+                    {scrapeUrls.split(/[\n,]+/).filter(u => u.trim().startsWith("http")).length} URL{scrapeUrls.split(/[\n,]+/).filter(u => u.trim().startsWith("http")).length !== 1 ? "s" : ""} detected
+                  </span>
+                )}
+                {scraping && scrapeProgress.current && (
+                  <span style={{ fontSize: "0.78rem", color: "#6b7280", fontStyle: "italic" }}>Fetching {scrapeProgress.current}</span>
+                )}
+              </div>
+            </div>
+
+            {scrapeResults.length > 0 && (
+              <div>
+                {/* Summary bar */}
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10, marginBottom: 16 }}>
+                  <div style={{ display: "flex", gap: 16, fontSize: "0.82rem", color: "#6b7280" }}>
+                    <span>✅ {scrapeResults.filter(r => r.status === "extracted" || r.status === "added").length} extracted</span>
+                    <span>➕ {scrapeResults.filter(r => r.status === "added").length} added</span>
+                    <span>❌ {scrapeResults.filter(r => r.status === "error" || r.status === "not_a_program").length} failed</span>
+                  </div>
+                  {scrapeResults.some(r => r.status === "extracted") && (
+                    <button className="submit-btn" style={{ padding: "9px 18px", fontSize: "0.85rem" }} onClick={addAllScraped}>
+                      ➕ Add all extracted ({scrapeResults.filter(r => r.status === "extracted").length})
+                    </button>
+                  )}
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  {scrapeResults.map((r, i) => (
+                    <div key={i} style={{
+                      background: "#fff",
+                      border: `1.5px solid ${r.status === "added" ? "#a5d6a5" : r.status === "extracted" ? "#dde8dd" : "#f5c6cb"}`,
+                      borderLeft: `4px solid ${r.status === "added" ? "#2d6a2d" : r.status === "extracted" ? "#4a9e4a" : r.status === "processing" ? "#9ca3af" : "#e53e3e"}`,
+                      borderRadius: 12,
+                      padding: "14px 18px",
+                    }}>
+                      {/* URL + status */}
+                      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10, flexWrap: "wrap", marginBottom: r.program ? 12 : 0 }}>
+                        <div>
+                          <div style={{ fontSize: "0.78rem", fontFamily: "monospace", color: "#6b7280", wordBreak: "break-all" }}>{r.url}</div>
+                          {r.status === "processing" && <div style={{ fontSize: "0.8rem", color: "#9ca3af", marginTop: 4 }}>⏳ Fetching…</div>}
+                          {r.status === "error" && <div style={{ fontSize: "0.8rem", color: "#c0392b", marginTop: 4 }}>❌ {r.error}</div>}
+                          {r.status === "not_a_program" && <div style={{ fontSize: "0.8rem", color: "#e65100", marginTop: 4 }}>⚠️ No recycling program found on this page</div>}
+                          {r.status === "added" && <div style={{ fontSize: "0.8rem", color: "#2d6a2d", marginTop: 4 }}>✅ Added to database</div>}
+                        </div>
+                        {r.status === "extracted" && r.program && (
+                          <button onClick={() => addScrapedProgram(r.program)} style={{ background: "#2d6a2d", color: "#fff", border: "none", borderRadius: 8, padding: "7px 16px", fontSize: "0.82rem", fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" }}>
+                            ➕ Add to database
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Extracted program preview */}
+                      {r.program && r.status !== "added" && (
+                        <div style={{ background: "#f7faf7", borderRadius: 8, padding: "12px 14px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px 16px" }}>
+                          {[
+                            { label: "Company", value: r.program.company },
+                            { label: "Program", value: r.program.program },
+                            { label: "Category", value: r.program.category },
+                            { label: "Cost", value: r.program.cost },
+                            { label: "Reward", value: r.program.reward },
+                            { label: "Items accepted", value: r.program.items, full: true },
+                            { label: "How to participate", value: r.program.howTo, full: true },
+                            { label: "What happens to items", value: r.program.whatHappens, full: true },
+                          ].filter(f => f.value).map(f => (
+                            <div key={f.label} style={{ gridColumn: f.full ? "1/-1" : undefined }}>
+                              <div style={{ fontSize: "0.67rem", textTransform: "uppercase", letterSpacing: "0.08em", color: "#9ca3af", fontWeight: 600, marginBottom: 2 }}>{f.label}</div>
+                              <div style={{ fontSize: "0.83rem", color: "#374151", lineHeight: 1.4 }}>{f.value}</div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {r.status === "added" && r.program && (
+                        <div style={{ fontSize: "0.83rem", color: "#6b7280" }}>{r.program.company} — {r.program.program}</div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {scrapeResults.length === 0 && !scraping && (
+              <div style={{ background: "#fff", border: "2px dashed #c5d9c5", borderRadius: 14, padding: "32px 24px" }}>
+                <p style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700, fontSize: "0.95rem", color: "#2d6a2d", marginBottom: 10 }}>💡 Tips for best results</p>
+                <ul style={{ color: "#6b7280", fontSize: "0.85rem", lineHeight: 2, paddingLeft: 18 }}>
+                  <li>Link directly to the recycling/sustainability page, not the homepage</li>
+                  <li>Search Google for <em>"[brand name] recycling program Australia"</em> to find pages</li>
+                  <li>Works best with pages that clearly describe what items are accepted</li>
+                  <li>You can paste up to ~20 URLs at once — it processes them one at a time</li>
+                  <li>All scraped programs are marked Unverified and appear in Admin for review</li>
+                </ul>
+              </div>
+            )}
           </div>
         )}
 

@@ -87,7 +87,24 @@ You can also add a custom domain in Vercel under **Settings → Domains**.
 
 ---
 
-## How the app works
+## 🌐 URL Scraper
+
+The app includes a built-in scraper tool (🌐 Scraper tab) that lets you paste URLs of recycling
+program pages. For each URL it:
+
+1. Fetches the page server-side (no CORS issues)
+2. Strips HTML noise down to readable text
+3. Sends it to Claude to extract: company, program name, items accepted, cost, reward, how to participate, and what happens to waste
+4. Shows you a preview so you can review before adding to the database
+
+All scraped programs are marked **Unverified** and appear in the Admin panel for review.
+
+**Tips:**
+- Link directly to the recycling/sustainability page, not the homepage
+- Search Google for `"[brand] recycling program Australia"` to find the right pages
+- You can paste up to ~20 URLs at once
+
+
 
 | Feature | Detail |
 |---|---|
