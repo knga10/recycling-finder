@@ -128,3 +128,52 @@ in `src/App.jsx` directly in GitHub. Vercel will redeploy automatically.
 - **Vercel:** Free tier is more than enough for this app
 - **Anthropic API:** Each search costs ~$0.001–0.003 AUD. Status checks on load cost slightly more.
   Monitor usage at [console.anthropic.com](https://console.anthropic.com)
+
+---
+
+## Feedback tab + Email notifications setup
+
+This version adds:
+- A **💬 Feedback** tab with 3 user survey questions
+- Responses saved to Google Sheets automatically
+- Email notifications via Resend:
+  - Every 5 new feedback responses → email to kngaproduct2@gmail.com
+  - When 5+ programs are unreviewed → email (max once per 24h)
+
+### Step A — Google Sheet setup
+
+1. Open your sheet: https://docs.google.com/spreadsheets/d/1IALtYp9ifx_rfwrbWJOCldLiEv6kgM43C8UAxNn6OtQ/edit
+2. Rename Sheet1 tab to **Sheet1** (keep as-is if already named that)
+3. Add these headers in Row 1, columns A–F:
+   `Timestamp | Search usefulness | Features wanted | Recommend barrier | Status | Notes`
+4. For Status column (E): select the column → Data → Data validation → Dropdown → add: `Pending, Reviewed, Backlog`
+
+### Step B — Google Service Account (so the app can write to your Sheet)
+
+1. Go to https://console.cloud.google.com
+2. Create a new project (or use existing)
+3. Enable **Google Sheets API**: APIs & Services → Enable APIs → search "Google Sheets API" → Enable
+4. Create a service account: APIs & Services → Credentials → Create Credentials → Service Account
+   - Name it `recycling-finder`, click Create, skip optional steps, Done
+5. Click the service account → Keys tab → Add Key → JSON → download the file
+6. Open the JSON file — copy the entire contents
+7. Share your Google Sheet with the service account email (looks like `recycling-finder@your-project.iam.gserviceaccount.com`) — give it **Editor** access
+
+### Step C — Add environment variables to Vercel
+
+In your Vercel project → Settings → Environment Variables, add these 4 vars:
+
+| Name | Value |
+|---|---|
+| `ANTHROPIC_API_KEY` | your existing Claude key |
+| `RESEND_API_KEY` | re_bXFQDnsM_DiUBkSdRPCa1PPpKG4gNPRwD |
+| `GOOGLE_SHEET_ID` | 1IALtYp9ifx_rfwrbWJOCldLiEv6kgM43C8UAxNn6OtQ |
+| `GOOGLE_SERVICE_ACCOUNT_JSON` | paste the entire contents of the JSON file downloaded in Step B |
+| `APP_URL` | your Vercel app URL e.g. https://recycling-finder.vercel.app |
+
+Then **redeploy** from the Deployments tab.
+
+### Step D — Verify Resend sender
+
+Resend's free tier sends from `onboarding@resend.dev` by default — no DNS setup needed.
+To send from your own domain later, add it under Resend → Domains.
