@@ -620,7 +620,7 @@ export default function App() {
                 </div>
                 {adminError && <p style={{ color: "#c0392b", fontSize: "0.83rem", marginTop: 8 }}>{adminError}</p>}
                 <button className="submit-btn" style={{ marginTop: 14 }} onClick={() => adminPass === ADMIN_PASSWORD ? (setAdminAuthed(true), setAdminError("")) : setAdminError("Incorrect password")}>Unlock →</button>
-                <p style={{ color: "#9ca3af", fontSize: "0.75rem", marginTop: 10 }}>Default: recycle2026 — change ADMIN_PASSWORD in App.jsx before deploying</p>
+                <p style={{ color: "#9ca3af", fontSize: "0.75rem", marginTop: 10 }}></p>
               </div>
             ) : (
               <div>
