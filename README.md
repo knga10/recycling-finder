@@ -1,179 +1,88 @@
-# ♻️ Can I Recycle This? — Deploy Guide
+# ♻️ Can I Recycle This? — Australia
 
-A searchable directory of Australian household recycling and take-back programs,
-with AI-powered search, public submissions, admin review, and automated status checks.
-
----
-
-## Before you start — what you'll need
-
-- A free [GitHub](https://github.com) account
-- A free [Vercel](https://vercel.com) account (sign up with your GitHub account — easiest)
-- An [Anthropic API key](https://console.anthropic.com) (you'll need to add a small amount of credit — searches cost fractions of a cent each)
+A searchable directory of Australian household recycling and take-back programs. Users type in any item — a frying pan, old mascara, AA batteries, worn-out sneakers — and the app finds which companies will take it back, what it costs, whether there's a reward, and where to drop it off.
 
 ---
 
-## Step 1 — Get the code onto GitHub
+## What it does
 
-1. Go to [github.com](https://github.com) and sign in
-2. Click the **+** button (top right) → **New repository**
-3. Name it `recycling-finder`, set it to **Public**, click **Create repository**
-4. On the next screen, click **uploading an existing file**
-5. Upload ALL files from this folder, keeping the folder structure:
-   ```
-   index.html
-   vite.config.js
-   package.json
-   vercel.json
-   .gitignore
-   src/
-     main.jsx
-     App.jsx
-   api/
-     claude.js
-   ```
-6. Click **Commit changes**
+- **AI-powered search** — natural language queries matched against the program database using Claude. Typing "old pan" finds cookware programs; "dead phone" finds electronics recyclers.
+- **Program cards** — each result shows items accepted, cost, any reward or discount, what happens to the waste, how to participate, a link to the program website, and a "Find drop-off locations" button where available.
+- **Coverage badges** — every program is tagged as Nationwide, Selected locations, or Mail-in so users know upfront whether it's accessible to them.
+- **Public submissions** — anyone can submit a new program via the Add tab. Submissions go live immediately and are flagged Unverified for admin review.
+- **URL scraper** — paste a list of URLs pointing to recycling program pages; Claude fetches each page, extracts the program details, and lets you add them to the database in bulk.
+- **Auto status checks** — on load, any program not checked in the last 7 days is sent to Claude to assess whether it's still active. Possibly inactive programs are flagged with a warning banner.
+- **Feedback tab** — three survey questions embedded in the app. Responses are written to a Google Sheet automatically, with a Status column (Pending / Reviewed / Backlog) for actioning.
+- **Email notifications** — automated alerts sent via Resend:
+  - Every 5 new feedback responses → email to the admin
+  - When 5 or more programs are unreviewed → email to the admin (max once per 24 hours)
+- **Admin panel** — password-protected dashboard showing pending submissions, flagged inactive programs, and all programs. Verify or remove entries with one click.
 
 ---
 
-## Step 2 — Deploy to Vercel
+## How it was built
 
-1. Go to [vercel.com](https://vercel.com) and sign in with GitHub
-2. Click **Add New… → Project**
-3. Find your `recycling-finder` repo and click **Import**
-4. Vercel will auto-detect it as a Vite project — leave all settings as-is
-5. Click **Deploy**
-6. Wait ~60 seconds — Vercel builds and deploys automatically
+The app is a single-page React application built with Vite and deployed on Vercel.
 
-Your app is now live! But search won't work yet — you need to add your API key.
+**Frontend**
+- React with hooks for all state management
+- `localStorage` for persistent program data across sessions
+- Inline CSS-in-JS styling — no external UI library
+- Google Fonts (Syne + DM Sans)
 
----
+**Backend — Vercel Serverless Functions**
+Three API routes handle all server-side logic:
 
-## Step 3 — Add your Anthropic API key
+- `/api/claude` — proxies requests to the Anthropic API so the API key is never exposed to the browser. Used for search matching, status checks, and scraper extraction.
+- `/api/fetch-url` — fetches external URLs server-side (bypassing browser CORS restrictions) for the scraper feature. Strips HTML noise down to readable text before passing to Claude.
+- `/api/notify` — handles feedback submissions and notification emails. Writes rows to Google Sheets via the Sheets API (authenticated via OAuth refresh token), then calls Resend to send email alerts when thresholds are hit.
 
-This keeps your key secure on Vercel's servers (never exposed to users).
+**Third-party services**
+- **Anthropic Claude API** — powers search, status checks, and URL scraping
+- **Google Sheets API** — stores feedback responses
+- **Resend** — sends notification emails
+- **Google OAuth** — authenticates the app to write to Google Sheets without a service account
 
-1. In Vercel, open your project dashboard
-2. Go to **Settings → Environment Variables**
-3. Click **Add New**
-4. Set:
-   - **Name:** `ANTHROPIC_API_KEY`
-   - **Value:** your key (starts with `sk-ant-...`)
-   - **Environment:** tick all three (Production, Preview, Development)
-5. Click **Save**
-6. Go to **Deployments** tab → click the three dots on your latest deployment → **Redeploy**
-
-Search will now work.
+**Data**
+The program database is seeded with 13 verified Australian recycling programs covering cookware, electronics, clothing, beauty, batteries, pharmaceuticals, beverage containers, and hard-to-recycle household items. Programs are stored in localStorage and can be extended via the submission form, URL scraper, or by editing the `SEED_PROGRAMS` array in `src/App.jsx`.
 
 ---
 
-## Step 4 — Change the admin password (important!)
+## Project structure
 
-Before sharing publicly, update the admin password:
-
-1. Open `src/App.jsx` in GitHub (click the file → pencil icon to edit)
-2. Find line: `const ADMIN_PASSWORD = "recycle2026";`
-3. Change `recycle2026` to your own password
-4. Click **Commit changes**
-5. Vercel will automatically redeploy within ~60 seconds
+```
+recycling-app/
+├── api/
+│   ├── claude.js          # Anthropic API proxy
+│   ├── fetch-url.js       # Server-side URL fetcher for scraper
+│   └── notify.js          # Google Sheets writer + Resend email notifications
+├── src/
+│   ├── App.jsx            # Main React app — all views and logic
+│   └── main.jsx           # React entry point
+├── index.html             # HTML shell
+├── vite.config.js         # Vite build config
+├── vercel.json            # Vercel routing (SPA fallback)
+└── package.json
+```
 
 ---
 
-## Your live URL
+## Environment variables required
 
-Vercel gives you a URL like: `https://recycling-finder-abc123.vercel.app`
+Set these in Vercel under Settings → Environment Variables:
 
-You can also add a custom domain in Vercel under **Settings → Domains**.
-
----
-
-## 🌐 URL Scraper
-
-The app includes a built-in scraper tool (🌐 Scraper tab) that lets you paste URLs of recycling
-program pages. For each URL it:
-
-1. Fetches the page server-side (no CORS issues)
-2. Strips HTML noise down to readable text
-3. Sends it to Claude to extract: company, program name, items accepted, cost, reward, how to participate, and what happens to waste
-4. Shows you a preview so you can review before adding to the database
-
-All scraped programs are marked **Unverified** and appear in the Admin panel for review.
-
-**Tips:**
-- Link directly to the recycling/sustainability page, not the homepage
-- Search Google for `"[brand] recycling program Australia"` to find the right pages
-- You can paste up to ~20 URLs at once
-
-
-
-| Feature | Detail |
+| Variable | Purpose |
 |---|---|
-| **Search** | Claude matches natural language queries against all programs |
-| **Add Program** | Anyone can submit — goes live immediately, flagged Unverified |
-| **Admin panel** | Password-protected; verify/remove submissions, re-check program status |
-| **Auto status check** | On load, programs not checked in 7 days are sent to Claude for an active/inactive assessment |
-| **Storage** | Programs saved in each user's browser localStorage |
+| `ANTHROPIC_API_KEY` | Claude API access |
+| `RESEND_API_KEY` | Email notifications |
+| `GOOGLE_SHEET_ID` | ID of the feedback Google Sheet |
+| `GOOGLE_CLIENT_ID` | OAuth client ID |
+| `GOOGLE_CLIENT_SECRET` | OAuth client secret |
+| `GOOGLE_REFRESH_TOKEN` | OAuth refresh token for Sheets access |
+| `APP_URL` | Your live Vercel URL (used in email links) |
 
 ---
 
-## Updating programs
+## Use case
 
-To add or edit seed programs permanently (for all users), edit the `SEED_PROGRAMS` array
-in `src/App.jsx` directly in GitHub. Vercel will redeploy automatically.
-
----
-
-## Costs
-
-- **Vercel:** Free tier is more than enough for this app
-- **Anthropic API:** Each search costs ~$0.001–0.003 AUD. Status checks on load cost slightly more.
-  Monitor usage at [console.anthropic.com](https://console.anthropic.com)
-
----
-
-## Feedback tab + Email notifications setup
-
-This version adds:
-- A **💬 Feedback** tab with 3 user survey questions
-- Responses saved to Google Sheets automatically
-- Email notifications via Resend:
-  - Every 5 new feedback responses → email to kngaproduct2@gmail.com
-  - When 5+ programs are unreviewed → email (max once per 24h)
-
-### Step A — Google Sheet setup
-
-1. Open your sheet: https://docs.google.com/spreadsheets/d/1IALtYp9ifx_rfwrbWJOCldLiEv6kgM43C8UAxNn6OtQ/edit
-2. Rename Sheet1 tab to **Sheet1** (keep as-is if already named that)
-3. Add these headers in Row 1, columns A–F:
-   `Timestamp | Search usefulness | Features wanted | Recommend barrier | Status | Notes`
-4. For Status column (E): select the column → Data → Data validation → Dropdown → add: `Pending, Reviewed, Backlog`
-
-### Step B — Google Service Account (so the app can write to your Sheet)
-
-1. Go to https://console.cloud.google.com
-2. Create a new project (or use existing)
-3. Enable **Google Sheets API**: APIs & Services → Enable APIs → search "Google Sheets API" → Enable
-4. Create a service account: APIs & Services → Credentials → Create Credentials → Service Account
-   - Name it `recycling-finder`, click Create, skip optional steps, Done
-5. Click the service account → Keys tab → Add Key → JSON → download the file
-6. Open the JSON file — copy the entire contents
-7. Share your Google Sheet with the service account email (looks like `recycling-finder@your-project.iam.gserviceaccount.com`) — give it **Editor** access
-
-### Step C — Add environment variables to Vercel
-
-In your Vercel project → Settings → Environment Variables, add these 4 vars:
-
-| Name | Value |
-|---|---|
-| `ANTHROPIC_API_KEY` | your existing Claude key |
-| `RESEND_API_KEY` | re_bXFQDnsM_DiUBkSdRPCa1PPpKG4gNPRwD |
-| `GOOGLE_SHEET_ID` | 1IALtYp9ifx_rfwrbWJOCldLiEv6kgM43C8UAxNn6OtQ |
-| `GOOGLE_SERVICE_ACCOUNT_JSON` | paste the entire contents of the JSON file downloaded in Step B |
-| `APP_URL` | your Vercel app URL e.g. https://recycling-finder.vercel.app |
-
-Then **redeploy** from the Deployments tab.
-
-### Step D — Verify Resend sender
-
-Resend's free tier sends from `onboarding@resend.dev` by default — no DNS setup needed.
-To send from your own domain later, add it under Resend → Domains.
+Built to make it easier for Australians to find responsible ways to dispose of household items that don't belong in general waste or kerbside recycling. The goal is a community-maintained, always-current directory — anyone can submit a program they know about, and the admin can verify and curate the database over time.
