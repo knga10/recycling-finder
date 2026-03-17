@@ -1,34 +1,61 @@
+// Force Node.js runtime (not Edge) — ensures req.body is parsed automatically
+export const config = { runtime: 'nodejs' }
+
 export default async function handler(req, res) {
-  // Log every incoming request immediately
-  console.log('[notify] hit —', req.method, JSON.stringify(req.body || {}))
+  console.log('[notify] invoked — method:', req.method)
 
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' })
+  }
 
-  const { type, data } = req.body
+  // Safely parse body — Vercel Node runtime auto-parses JSON but guard anyway
+  let body = req.body
+  if (typeof body === 'string') {
+    try { body = JSON.parse(body) } catch (e) {
+      console.error('[notify] body parse error:', e.message)
+      return res.status(400).json({ error: 'Invalid JSON body' })
+    }
+  }
+  if (!body || typeof body !== 'object') {
+    console.error('[notify] no body received, typeof:', typeof body)
+    return res.status(400).json({ error: 'Empty body' })
+  }
 
-  // Check env vars are present (don't log values, just presence)
-  console.log('[notify] env check —', {
+  console.log('[notify] body keys:', Object.keys(body))
+
+  const { type, data } = body
+
+  // Check env vars are present
+  const envCheck = {
     hasClientId:     !!process.env.GOOGLE_CLIENT_ID,
     hasClientSecret: !!process.env.GOOGLE_CLIENT_SECRET,
     hasRefreshToken: !!process.env.GOOGLE_REFRESH_TOKEN,
     hasSheetId:      !!process.env.GOOGLE_SHEET_ID,
     hasResendKey:    !!process.env.RESEND_API_KEY,
-  })
+  }
+  console.log('[notify] env check:', JSON.stringify(envCheck))
+
+  const missingEnv = Object.entries(envCheck).filter(([, v]) => !v).map(([k]) => k)
+  if (missingEnv.length > 0) {
+    console.error('[notify] missing env vars:', missingEnv)
+    return res.status(500).json({ error: 'Missing env vars', missing: missingEnv })
+  }
 
   if (type === 'feedback') {
-    const { searchUsefulness, featuresWanted, recommendBarrier, timestamp } = data
+    const { searchUsefulness, featuresWanted, recommendBarrier, timestamp } = data || {}
 
-    console.log('[notify] getting OAuth token…')
+    // Step 1: Get OAuth token
+    console.log('[notify] fetching OAuth token…')
     let token
     try {
       token = await getAccessToken()
-      console.log('[notify] token OK — length:', token?.length)
+      console.log('[notify] token OK, length:', token?.length)
     } catch (err) {
-      console.error('[notify] getAccessToken FAILED:', err.message)
+      console.error('[notify] OAuth FAILED:', err.message)
       return res.status(500).json({ error: 'OAuth failed', detail: err.message })
     }
 
-    console.log('[notify] appending to sheet…')
+    // Step 2: Append to Sheet
     const row = [
       timestamp || new Date().toISOString(),
       searchUsefulness || '',
@@ -37,21 +64,21 @@ export default async function handler(req, res) {
       'Pending',
       ''
     ]
-    console.log('[notify] row:', JSON.stringify(row))
+    console.log('[notify] appending row:', JSON.stringify(row))
 
     const sheetResult = await appendToSheet(row, token)
     console.log('[notify] sheet result:', JSON.stringify(sheetResult))
 
     if (!sheetResult.ok) {
-      return res.status(500).json({ error: 'Failed to write to sheet', detail: sheetResult.error })
+      return res.status(500).json({ error: 'Sheet write failed', detail: sheetResult.error })
     }
 
-    console.log('[notify] getting row count…')
+    // Step 3: Check count and maybe send email
     const countResult = await getSheetRowCount(token)
-    console.log('[notify] count result:', JSON.stringify(countResult))
+    console.log('[notify] row count:', JSON.stringify(countResult))
 
     if (countResult.ok && countResult.count > 0 && countResult.count % 5 === 0) {
-      console.log('[notify] sending feedback email for count:', countResult.count)
+      console.log('[notify] sending feedback email, count:', countResult.count)
       const emailResult = await sendEmail({
         to: 'kngaproduct2@gmail.com',
         subject: `♻️ Recycling Finder — ${countResult.count} feedback responses received`,
@@ -64,52 +91,54 @@ export default async function handler(req, res) {
   }
 
   if (type === 'program_review_check') {
-    const { unverifiedCount, lastNotifiedAt } = data
-    const hoursSinceLastNotify = lastNotifiedAt
-      ? (Date.now() - new Date(lastNotifiedAt).getTime()) / (1000 * 60 * 60)
+    const { unverifiedCount, lastNotifiedAt } = data || {}
+    const hoursSince = lastNotifiedAt
+      ? (Date.now() - new Date(lastNotifiedAt).getTime()) / 3600000
       : Infinity
 
-    console.log('[notify] program_review_check — unverified:', unverifiedCount, 'hoursSince:', hoursSinceLastNotify)
+    console.log('[notify] program check — unverified:', unverifiedCount, 'hoursSince:', hoursSince)
 
-    if (unverifiedCount >= 5 && hoursSinceLastNotify > 24) {
+    if (unverifiedCount >= 5 && hoursSince > 24) {
+      let token
+      try { token = await getAccessToken() } catch (err) {
+        return res.status(500).json({ error: 'OAuth failed', detail: err.message })
+      }
       const emailResult = await sendEmail({
         to: 'kngaproduct2@gmail.com',
         subject: `♻️ Recycling Finder — ${unverifiedCount} programs waiting for review`,
         html: programReviewEmailHtml(unverifiedCount),
       })
-      console.log('[notify] program review email result:', JSON.stringify(emailResult))
+      console.log('[notify] program review email:', JSON.stringify(emailResult))
       return res.status(200).json({ ok: true, sent: true })
     }
 
     return res.status(200).json({ ok: true, sent: false })
   }
 
-  return res.status(400).json({ error: 'Unknown type' })
+  console.error('[notify] unknown type:', type)
+  return res.status(400).json({ error: 'Unknown type', received: type })
 }
 
-// ── Google OAuth ───────────────────────────────────────────────────────────
+// ── Google OAuth (refresh token) ───────────────────────────────────────────
 
 async function getAccessToken() {
-  const body = new URLSearchParams({
-    client_id:     process.env.GOOGLE_CLIENT_ID,
-    client_secret: process.env.GOOGLE_CLIENT_SECRET,
-    refresh_token: process.env.GOOGLE_REFRESH_TOKEN,
-    grant_type:    'refresh_token',
-  })
-
   const res = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body,
+    body: new URLSearchParams({
+      client_id:     process.env.GOOGLE_CLIENT_ID,
+      client_secret: process.env.GOOGLE_CLIENT_SECRET,
+      refresh_token: process.env.GOOGLE_REFRESH_TOKEN,
+      grant_type:    'refresh_token',
+    }),
   })
 
   const data = await res.json()
-  console.log('[notify] OAuth response status:', res.status, '— keys:', Object.keys(data))
+  console.log('[notify] OAuth status:', res.status, '— has token:', !!data.access_token, '— error:', data.error || 'none')
 
   if (!data.access_token) {
-    throw new Error(`No access_token. Response: ${JSON.stringify(data)}`)
+    throw new Error(`OAuth error: ${data.error} — ${data.error_description}`)
   }
-
   return data.access_token
 }
 
@@ -118,8 +147,8 @@ async function getAccessToken() {
 async function appendToSheet(row, token) {
   try {
     const sheetId = process.env.GOOGLE_SHEET_ID
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/Sheet1!A1:F1:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`
-    console.log('[notify] sheets URL:', url)
+    const range = encodeURIComponent('Sheet1!A:F')
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`
 
     const response = await fetch(url, {
       method: 'POST',
@@ -130,12 +159,10 @@ async function appendToSheet(row, token) {
       body: JSON.stringify({ values: [row] }),
     })
 
-    const responseText = await response.text()
-    console.log('[notify] sheets response status:', response.status, '— body:', responseText.slice(0, 300))
+    const text = await response.text()
+    console.log('[notify] sheets status:', response.status, '— response:', text.slice(0, 400))
 
-    if (!response.ok) {
-      return { ok: false, error: responseText }
-    }
+    if (!response.ok) return { ok: false, error: text }
     return { ok: true }
   } catch (err) {
     return { ok: false, error: err.message }
@@ -145,7 +172,8 @@ async function appendToSheet(row, token) {
 async function getSheetRowCount(token) {
   try {
     const sheetId = process.env.GOOGLE_SHEET_ID
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/Sheet1!A:A`
+    const range = encodeURIComponent('Sheet1!A:A')
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}`
 
     const response = await fetch(url, {
       headers: { Authorization: `Bearer ${token}` },
