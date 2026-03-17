@@ -16,7 +16,7 @@ const SEED_PROGRAMS = [
   { id: "seed-13", company: "Pharmacies (RUM Project)", program: "Return Unwanted Medicines", category: "Pharmaceuticals", items: "medicine medication tablets pills capsules vitamins supplements expired medicine old prescription antibiotics paracetamol ibuprofen panadol nurofen over the counter drugs", itemsNot: "Sharps/needles, chemotherapy drugs, large volumes of liquid medications", cost: "Free", reward: "None", whatHappens: "Collected medicines safely incinerated at high temperatures to prevent environmental contamination.", howTo: "Take unwanted medicines in original packaging to any participating pharmacy.", website: "https://returnmed.com.au", notes: "Government-backed program. Available at most pharmacies across Australia.", coverage: "nationwide", locationFinderUrl: "https://returnmed.com.au/find-a-pharmacy", verified: true, status: "active", lastChecked: null, submittedBy: "seed" },
 ];
 
-const ADMIN_PASSWORD = "recycle2026";
+const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD;
 const CATEGORIES = [
   "Batteries",
   "Beauty / Personal Care",
