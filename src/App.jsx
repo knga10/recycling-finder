@@ -229,8 +229,9 @@ export default function App() {
     if (!form.company || !form.program || !form.category || !form.items) return;
     setSubmitting(true);
     const newProgram = { ...form, id: `user-${Date.now()}`, verified: false, status: "active", lastChecked: null, submittedBy: "public", submittedAt: new Date().toISOString() };
-    setPrograms(prev => [...prev, newProgram]);
     await apiAction('add', { program: newProgram });
+    const refreshed = await apiGetPrograms();
+    setPrograms(refreshed);
     setForm(EMPTY_FORM);
     setSubmitDone(true);
     setSubmitting(false);
@@ -282,8 +283,9 @@ export default function App() {
   };
 
   const addScrapedProgram = async (program) => {
-    setPrograms(prev => [...prev, program]);
     await apiAction('add', { program });
+    const refreshed = await apiGetPrograms();
+    setPrograms(refreshed);
     setScrapeResults(prev => prev.map(r => r.program?.id === program.id ? { ...r, status: "added" } : r));
     showToast(`${program.company} added ✓`);
   };
@@ -291,22 +293,25 @@ export default function App() {
   const addAllScraped = async () => {
     const toAdd = scrapeResults.filter(r => r.status === "extracted" && r.program);
     const newPrograms = toAdd.map(r => r.program);
-    setPrograms(prev => [...prev, ...newPrograms]);
     await apiAction('replace', { programs: [...programs, ...newPrograms] });
+    const refreshed = await apiGetPrograms();
+    setPrograms(refreshed);
     setScrapeResults(prev => prev.map(r => r.status === "extracted" ? { ...r, status: "added" } : r));
     showToast(`${toAdd.length} programs added ✓`);
   };
 
   const verifyProgram = async (id) => {
     const updated = programs.map(p => p.id === id ? { ...p, verified: true } : p);
-    setPrograms(updated);
     await apiAction('replace', { programs: updated });
+    const refreshed = await apiGetPrograms();
+    setPrograms(refreshed);
     showToast("Program verified ✓");
   };
   const removeProgram = async (id) => {
     const updated = programs.filter(p => p.id !== id);
-    setPrograms(updated);
     await apiAction('replace', { programs: updated });
+    const refreshed = await apiGetPrograms();
+    setPrograms(refreshed);
     showToast("Program removed", "warn");
   };
   const forceCheck = async () => {
