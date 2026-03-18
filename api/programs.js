@@ -12,7 +12,17 @@ async function kvGet(key) {
     headers: { Authorization: `Bearer ${KV_TOKEN}` },
   })
   const data = await res.json()
-  return data.result ? JSON.parse(data.result) : null
+  console.log('[programs] kvGet raw result type:', typeof data.result, 'isArray:', Array.isArray(data.result))
+  
+  if (!data.result) return null
+  
+  // Upstash may return already-parsed value or a JSON string
+  if (Array.isArray(data.result)) return data.result
+  if (typeof data.result === 'string') {
+    try { return JSON.parse(data.result) } catch { return null }
+  }
+  if (typeof data.result === 'object') return data.result
+  return null
 }
 
 async function kvSet(key, value) {
