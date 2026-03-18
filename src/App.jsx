@@ -393,65 +393,63 @@ export default function App() {
         {/* ── SEARCH ── */}
         {view === "search" && (
           <div className="fade-in">
-            {programsLoading && (
+            {programsLoading ? (
               <div style={{ textAlign: "center", padding: 48, color: "#6b7280" }}>
                 <div className="spin" style={{ width: 24, height: 24, border: "3px solid #c5d9c5", borderTopColor: "#2d6a2d", borderRadius: "50%", display: "inline-block", marginBottom: 12 }} />
                 <p style={{ fontSize: "0.9rem" }}>Loading programs…</p>
               </div>
-            )}
-            {!programsLoading && (
-            <div style={{ background: "#fff", border: "2px solid #c5d9c5", borderRadius: 18, display: "flex", overflow: "hidden", boxShadow: "0 4px 24px rgba(45,106,45,0.08)", marginBottom: 14 }}>
-              <input style={{ flex: 1, border: "none", outline: "none", padding: "17px 20px", fontSize: "1.05rem", background: "transparent" }}
-                placeholder="e.g. old frying pan, mascara, AA batteries, sneakers…"
-                value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-                onKeyDown={e => e.key === "Enter" && doSearch(searchQuery)} />
-              <button onClick={() => doSearch(searchQuery)} style={{ margin: 6, background: "#2d6a2d", color: "#fff", border: "none", borderRadius: 12, padding: "12px 22px", fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: "0.9rem", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
-                {searching ? <div className="spin" style={{ width: 16, height: 16, border: "2px solid rgba(255,255,255,0.4)", borderTopColor: "#fff", borderRadius: "50%" }} /> : "Search"}
-              </button>
-            </div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 7, marginBottom: 32 }}>
-              {["frying pan","mascara","AA batteries","old jeans","sneakers","running shoes","expired medicine","ink cartridge","soft drink can","coffee pod","laptop","toothpaste tube"].map(t => (
-                <button key={t} className="chip" onClick={() => { setSearchQuery(t); doSearch(t); }}>{t}</button>
-              ))}
-            </div>
-
-            {searching && (
-              <div style={{ textAlign: "center", padding: 48, color: "#6b7280" }}>
-                <div className="spin" style={{ width: 28, height: 28, border: "3px solid #c5d9c5", borderTopColor: "#2d6a2d", borderRadius: "50%", display: "inline-block", marginBottom: 14 }} />
-                <p style={{ fontSize: "0.92rem" }}>Searching recycling programs…</p>
-              </div>
-            )}
-
-            {searchResults && !searching && (
-              <div className="fade-in">
-                {searchResults.summary && <p style={{ marginBottom: 16, color: "#5c4033", fontSize: "0.9rem", fontStyle: "italic" }}>💡 {searchResults.summary}</p>}
-                {searchResults.programs.length === 0 ? (
-                  <div style={{ background: "#fff", border: "2px dashed #c5d9c5", borderRadius: 16, padding: "40px 28px", textAlign: "center" }}>
-                    <div style={{ fontSize: "2.4rem", marginBottom: 12 }}>🌿</div>
-                    <h3 style={{ fontFamily: "'Syne',sans-serif", fontSize: "1.15rem", color: "#5c4033" }}>No programs found for this item</h3>
-                    <p style={{ color: "#6b7280", marginTop: 8, fontSize: "0.88rem", lineHeight: 1.6 }}>Try your kerbside bin or check your local council's website.</p>
-                    <button className="chip" style={{ marginTop: 16 }} onClick={() => setView("submit")}>＋ Add a program</button>
+            ) : (
+              <div>
+                <div style={{ background: "#fff", border: "2px solid #c5d9c5", borderRadius: 18, display: "flex", overflow: "hidden", boxShadow: "0 4px 24px rgba(45,106,45,0.08)", marginBottom: 14 }}>
+                  <input style={{ flex: 1, border: "none", outline: "none", padding: "17px 20px", fontSize: "1.05rem", background: "transparent" }}
+                    placeholder="e.g. old frying pan, mascara, AA batteries, sneakers…"
+                    value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+                    onKeyDown={e => e.key === "Enter" && doSearch(searchQuery)} />
+                  <button onClick={() => doSearch(searchQuery)} style={{ margin: 6, background: "#2d6a2d", color: "#fff", border: "none", borderRadius: 12, padding: "12px 22px", fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: "0.9rem", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+                    {searching ? <div className="spin" style={{ width: 16, height: 16, border: "2px solid rgba(255,255,255,0.4)", borderTopColor: "#fff", borderRadius: "50%" }} /> : "Search"}
+                  </button>
+                </div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 7, marginBottom: 32 }}>
+                  {["frying pan","mascara","AA batteries","old jeans","sneakers","running shoes","expired medicine","ink cartridge","soft drink can","coffee pod","laptop","toothpaste tube"].map(t => (
+                    <button key={t} className="chip" onClick={() => { setSearchQuery(t); doSearch(t); }}>{t}</button>
+                  ))}
+                </div>
+                {searching && (
+                  <div style={{ textAlign: "center", padding: 48, color: "#6b7280" }}>
+                    <div className="spin" style={{ width: 28, height: 28, border: "3px solid #c5d9c5", borderTopColor: "#2d6a2d", borderRadius: "50%", display: "inline-block", marginBottom: 14 }} />
+                    <p style={{ fontSize: "0.92rem" }}>Searching recycling programs…</p>
                   </div>
-                ) : (
+                )}
+                {searchResults && !searching && (
+                  <div className="fade-in">
+                    {searchResults.summary && <p style={{ marginBottom: 16, color: "#5c4033", fontSize: "0.9rem", fontStyle: "italic" }}>💡 {searchResults.summary}</p>}
+                    {searchResults.programs.length === 0 ? (
+                      <div style={{ background: "#fff", border: "2px dashed #c5d9c5", borderRadius: 16, padding: "40px 28px", textAlign: "center" }}>
+                        <div style={{ fontSize: "2.4rem", marginBottom: 12 }}>🌿</div>
+                        <h3 style={{ fontFamily: "'Syne',sans-serif", fontSize: "1.15rem", color: "#5c4033" }}>No programs found for this item</h3>
+                        <p style={{ color: "#6b7280", marginTop: 8, fontSize: "0.88rem", lineHeight: 1.6 }}>Try your kerbside bin or check your local council's website.</p>
+                        <button className="chip" style={{ marginTop: 16 }} onClick={() => setView("submit")}>＋ Add a program</button>
+                      </div>
+                    ) : (
+                      <div>
+                        <p style={{ fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.1em", color: "#6b7280", fontWeight: 600, marginBottom: 14 }}>{searchResults.programs.length} program{searchResults.programs.length !== 1 ? "s" : ""} found</p>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                          {searchResults.programs.map((p, i) => <ProgramCard key={p.id} program={p} delay={i * 0.07} />)}
+                        </div>
+                      </div>
+                    )}
+                    {searchResults.tip && <p style={{ marginTop: 18, color: "#6b7280", fontSize: "0.8rem", textAlign: "center" }}>💡 {searchResults.tip}</p>}
+                  </div>
+                )}
+                {!searchResults && !searching && (
                   <div>
-                    <p style={{ fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.1em", color: "#6b7280", fontWeight: 600, marginBottom: 14 }}>{searchResults.programs.length} program{searchResults.programs.length !== 1 ? "s" : ""} found</p>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-                      {searchResults.programs.map((p, i) => <ProgramCard key={p.id} program={p} delay={i * 0.07} />)}
+                    <p style={{ fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.1em", color: "#6b7280", fontWeight: 600, marginBottom: 14 }}>All {programs.filter(p => p.status !== "inactive").length} programs</p>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                      {programs.filter(p => p.status !== "inactive").map((p, i) => <ProgramCard key={p.id} program={p} delay={i * 0.04} compact />)}
                     </div>
                   </div>
                 )}
-                {searchResults.tip && <p style={{ marginTop: 18, color: "#6b7280", fontSize: "0.8rem", textAlign: "center" }}>💡 {searchResults.tip}</p>}
               </div>
-            )}
-
-            {!searchResults && !searching && (
-              <div>
-                <p style={{ fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.1em", color: "#6b7280", fontWeight: 600, marginBottom: 14 }}>All {programs.filter(p => p.status !== "inactive").length} programs</p>
-                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  {programs.filter(p => p.status !== "inactive").map((p, i) => <ProgramCard key={p.id} program={p} delay={i * 0.04} compact />)}
-                </div>
-              </div>
-            )}
             )}
           </div>
         )}
