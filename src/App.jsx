@@ -719,3 +719,114 @@ export default function App() {
     </div>
   );
 }
+
+function ProgramCard({ program: p, delay = 0, compact = false }) {
+  const [expanded, setExpanded] = useState(!compact);
+  const isFree = p.cost?.toLowerCase() === "free";
+  const hasCost = p.cost && p.cost !== "Free" && p.cost !== "None";
+  const hasReward = p.reward && p.reward !== "None";
+  const cvgStyle = coverageStyle(p.coverage);
+
+  return (
+    <div className="card-in" onClick={compact ? () => setExpanded(v => !v) : undefined}
+      style={{ background: "#fff", border: "1.5px solid #e0e8e0", borderLeft: "4px solid #2d6a2d", borderRadius: 14, padding: compact ? "14px 18px" : "20px 22px", boxShadow: "0 2px 10px rgba(0,0,0,0.04)", animationDelay: `${delay}s`, cursor: compact ? "pointer" : "default" }}>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
+        <div>
+          <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: compact ? "0.98rem" : "1.1rem" }}>{p.company}</div>
+          <div style={{ fontSize: "0.82rem", color: "#6b7280", marginTop: 2 }}>{p.program}</div>
+        </div>
+        <div style={{ display: "flex", gap: 5, flexWrap: "wrap", alignItems: "center" }}>
+          <span className="pill pill-cat">{p.category}</span>
+          {p.coverage && <span className="pill" style={cvgStyle}>{coverageLabel(p.coverage)}</span>}
+          {isFree && <span className="pill pill-free">✓ Free</span>}
+          {hasCost && <span className="pill pill-cost">💰 Paid</span>}
+          {hasReward && <span className="pill pill-reward">🎁 Reward</span>}
+          {!p.verified && <span className="pill pill-unverified">Unverified</span>}
+          {p.status === "possibly_inactive" && <span className="pill pill-inactive">⚠ May be inactive</span>}
+        </div>
+      </div>
+
+      {p.status === "possibly_inactive" && p.statusReason && (
+        <div style={{ background: "#fce4ec", borderRadius: 8, padding: "7px 11px", marginTop: 10, fontSize: "0.8rem", color: "#880e4f" }}>⚠️ {p.statusReason}</div>
+      )}
+
+      {expanded && (
+        <div style={{ marginTop: 16 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px 20px" }}>
+            <div style={{ gridColumn: "1/-1" }}>
+              <span className="slabel">Items accepted</span>
+              <div style={{ fontSize: "0.86rem", color: "#374151", lineHeight: 1.5 }}>
+                {p.items?.split(" ").slice(0, 14).join(", ")}{p.items?.split(" ").length > 14 ? "…" : ""}
+              </div>
+            </div>
+            {p.itemsNot && (
+              <div style={{ gridColumn: "1/-1" }}>
+                <span className="slabel">Not accepted</span>
+                <div style={{ fontSize: "0.86rem", color: "#374151", lineHeight: 1.5 }}>{p.itemsNot}</div>
+              </div>
+            )}
+            <div>
+              <span className="slabel">Cost</span>
+              <div style={{ fontSize: "0.86rem", color: "#374151" }}>{p.cost}</div>
+            </div>
+            <div>
+              <span className="slabel">Reward / discount</span>
+              <div style={{ fontSize: "0.86rem", color: "#374151" }}>{p.reward || "None"}</div>
+            </div>
+            {p.whatHappens && (
+              <div style={{ gridColumn: "1/-1" }}>
+                <span className="slabel">What happens to your items</span>
+                <div style={{ fontSize: "0.86rem", color: "#374151", lineHeight: 1.5 }}>{p.whatHappens}</div>
+              </div>
+            )}
+            {p.howTo && (
+              <div style={{ gridColumn: "1/-1" }}>
+                <span className="slabel">How to participate</span>
+                <div style={{ fontSize: "0.86rem", color: "#374151", lineHeight: 1.5 }}>{p.howTo}</div>
+              </div>
+            )}
+            {p.notes && (
+              <div style={{ gridColumn: "1/-1" }}>
+                <span className="slabel">Notes</span>
+                <div style={{ fontSize: "0.83rem", color: "#6b7280", lineHeight: 1.5 }}>{p.notes}</div>
+              </div>
+            )}
+          </div>
+          <div style={{ marginTop: 14, display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
+            {p.website && (
+              <a className="ext-link" href={p.website} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}>
+                🔗 Program website ↗
+              </a>
+            )}
+            {p.locationFinderUrl && (
+              <a className="loc-btn" href={p.locationFinderUrl} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}>
+                📍 Find drop-off locations ↗
+              </a>
+            )}
+          </div>
+          {p.lastChecked && <div style={{ marginTop: 10, fontSize: "0.71rem", color: "#c4c9d0" }}>Status checked {new Date(p.lastChecked).toLocaleDateString("en-AU")}</div>}
+        </div>
+      )}
+      {compact && <div style={{ marginTop: 6, fontSize: "0.73rem", color: "#9ca3af" }}>{expanded ? "▲ less" : "▼ more"}</div>}
+    </div>
+  );
+}
+
+function AdminRow({ program: p, onVerify, onRemove, flagMode = false }) {
+  return (
+    <div style={{ background: flagMode ? "#fff8f8" : "#fafafa", border: `1.5px solid ${flagMode ? "#f5c6cb" : "#e0e8e0"}`, borderRadius: 12, padding: "12px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+      <div>
+        <div style={{ fontWeight: 600, fontSize: "0.92rem" }}>{p.company} — <span style={{ fontWeight: 400, color: "#6b7280" }}>{p.program}</span></div>
+        <div style={{ fontSize: "0.78rem", color: "#9ca3af", marginTop: 2 }}>
+          {p.category} · {coverageLabel(p.coverage || "unknown")} · {p.submittedAt ? `Submitted ${new Date(p.submittedAt).toLocaleDateString("en-AU")}` : "Seed data"}
+          {p.status && p.status !== "active" && <span style={{ marginLeft: 6, color: "#880e4f" }}>· {p.status}</span>}
+          {p.statusReason && <span style={{ marginLeft: 6, color: "#880e4f" }}>"{p.statusReason}"</span>}
+        </div>
+      </div>
+      <div style={{ display: "flex", gap: 8 }}>
+        {!p.verified && <button onClick={() => onVerify(p.id)} style={{ background: "#e8f5e8", border: "1px solid #a5d6a5", color: "#1b5e1b", borderRadius: 8, padding: "6px 14px", fontSize: "0.82rem", fontWeight: 600, cursor: "pointer" }}>✓ Verify</button>}
+        <button onClick={() => onRemove(p.id)} style={{ background: "#fdecea", border: "1px solid #f5c6cb", color: "#c0392b", borderRadius: 8, padding: "6px 14px", fontSize: "0.82rem", fontWeight: 600, cursor: "pointer" }}>Remove</button>
+      </div>
+    </div>
+  );
+}
