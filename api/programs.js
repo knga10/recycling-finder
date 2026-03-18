@@ -1,32 +1,39 @@
-// Force Node.js runtime
 export const config = { runtime: 'nodejs' }
 
 const KV_URL = process.env.RECYCLING_FINDER_STORAGE_KV_REST_API_URL
 const KV_TOKEN = process.env.RECYCLING_FINDER_STORAGE_KV_REST_API_TOKEN
 const PROGRAMS_KEY = 'programs'
 
-// ── Upstash Redis REST API helpers ─────────────────────────────────────────
-
 async function kvGet(key) {
-  const res = await fetch(`${KV_URL}/get/${key}`, {
+  const res = await fetch(`${KV_URL}/get/${encodeURIComponent(key)}`, {
     headers: { Authorization: `Bearer ${KV_TOKEN}` },
   })
   const data = await res.json()
-  console.log('[programs] kvGet raw result type:', typeof data.result, 'isArray:', Array.isArray(data.result))
-  
-  if (!data.result) return null
-  
-  // Upstash may return already-parsed value or a JSON string
-  if (Array.isArray(data.result)) return data.result
-  if (typeof data.result === 'string') {
-    try { return JSON.parse(data.result) } catch { return null }
+  console.log('[programs] kvGet status:', res.status, 'result type:', typeof data.result)
+
+  if (!data.result) return []
+
+  // Upstash returns the value as stored — if we stored JSON.stringify(array), it comes back as string
+  let value = data.result
+  if (typeof value === 'string') {
+    try { value = JSON.parse(value) } catch { return [] }
   }
-  if (typeof data.result === 'object') return data.result
-  return null
+  // Handle double-encoding just in case
+  if (typeof value === 'string') {
+    try { value = JSON.parse(value) } catch { return [] }
+  }
+  if (!Array.isArray(value)) {
+    console.error('[programs] kvGet: not an array after parse:', typeof value)
+    return []
+  }
+  console.log('[programs] kvGet: returning', value.length, 'programs')
+  return value
 }
 
 async function kvSet(key, value) {
-  const res = await fetch(`${KV_URL}/set/${key}`, {
+  // Upstash REST: POST /set/key with body as the value
+  // We store as a JSON string
+  const res = await fetch(`${KV_URL}/set/${encodeURIComponent(key)}`, {
     method: 'POST',
     headers: {
       Authorization: `Bearer ${KV_TOKEN}`,
@@ -34,32 +41,29 @@ async function kvSet(key, value) {
     },
     body: JSON.stringify(JSON.stringify(value)),
   })
-  return res.json()
+  const result = await res.json()
+  console.log('[programs] kvSet:', res.status, JSON.stringify(result))
+  return result
 }
-
-// ── Handler ────────────────────────────────────────────────────────────────
 
 export default async function handler(req, res) {
   console.log('[programs] invoked —', req.method)
   console.log('[programs] env check — hasUrl:', !!KV_URL, 'hasToken:', !!KV_TOKEN)
 
   if (!KV_URL || !KV_TOKEN) {
-    console.error('[programs] missing KV env vars — url:', KV_URL?.slice(0,20), 'token:', !!KV_TOKEN)
     return res.status(500).json({ error: 'KV not configured', hasUrl: !!KV_URL, hasToken: !!KV_TOKEN })
   }
 
-  // GET — return all programs
   if (req.method === 'GET') {
     try {
       const programs = await kvGet(PROGRAMS_KEY)
-      return res.status(200).json({ programs: programs || [] })
+      return res.status(200).json({ programs })
     } catch (err) {
       console.error('[programs] GET error:', err.message)
-      return res.status(500).json({ error: err.message })
+      return res.status(500).json({ error: err.message, programs: [] })
     }
   }
 
-  // POST — write programs (full replace) or single add/update/remove
   if (req.method === 'POST') {
     let body = req.body
     if (typeof body === 'string') {
@@ -69,46 +73,37 @@ export default async function handler(req, res) {
     }
 
     const { action, programs, program } = body
+    console.log('[programs] action:', action)
 
     try {
-      // action: 'seed' — write full array (used on first load)
       if (action === 'seed') {
         await kvSet(PROGRAMS_KEY, programs)
-        console.log('[programs] seeded', programs.length, 'programs')
-        return res.status(200).json({ ok: true })
+        return res.status(200).json({ ok: true, count: programs.length })
       }
 
-      // action: 'add' — append a single program
       if (action === 'add') {
-        const current = await kvGet(PROGRAMS_KEY) || []
+        const current = await kvGet(PROGRAMS_KEY)
         const updated = [...current, program]
         await kvSet(PROGRAMS_KEY, updated)
-        console.log('[programs] added:', program.company)
         return res.status(200).json({ ok: true, count: updated.length })
       }
 
-      // action: 'update' — replace one program by id
-      if (action === 'update') {
-        const current = await kvGet(PROGRAMS_KEY) || []
-        const updated = current.map(p => p.id === program.id ? program : p)
-        await kvSet(PROGRAMS_KEY, updated)
-        console.log('[programs] updated:', program.id)
-        return res.status(200).json({ ok: true })
-      }
-
-      // action: 'remove' — delete one program by id
-      if (action === 'remove') {
-        const current = await kvGet(PROGRAMS_KEY) || []
-        const updated = current.filter(p => p.id !== program.id)
-        await kvSet(PROGRAMS_KEY, updated)
-        console.log('[programs] removed:', program.id)
-        return res.status(200).json({ ok: true })
-      }
-
-      // action: 'replace' — full replace (used when bulk updating)
       if (action === 'replace') {
         await kvSet(PROGRAMS_KEY, programs)
-        console.log('[programs] replaced all —', programs.length, 'programs')
+        return res.status(200).json({ ok: true, count: programs.length })
+      }
+
+      if (action === 'update') {
+        const current = await kvGet(PROGRAMS_KEY)
+        const updated = current.map(p => p.id === program.id ? program : p)
+        await kvSet(PROGRAMS_KEY, updated)
+        return res.status(200).json({ ok: true })
+      }
+
+      if (action === 'remove') {
+        const current = await kvGet(PROGRAMS_KEY)
+        const updated = current.filter(p => p.id !== program.id)
+        await kvSet(PROGRAMS_KEY, updated)
         return res.status(200).json({ ok: true })
       }
 
