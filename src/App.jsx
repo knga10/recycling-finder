@@ -390,7 +390,7 @@ export default function App() {
         {/* Header */}
         <div style={{ padding: "40px 0 28px", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
           <div>
-            <h1 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: "clamp(1.8rem,4vw,2.6rem)", color: "#2d6a2d", letterSpacing: "-0.3em", lineHeight: 1.05 }}>♻️ Can I recycle this?</h1>
+            <h1 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: "clamp(1.8rem,4vw,2.6rem)", color: "#2d6a2d", letterSpacing: "-0.03em", lineHeight: 1.05 }}>♻️ Can I recycle this?</h1>
             <p style={{ color: "#6b7280", fontSize: "0.9rem", marginTop: 5, fontWeight: 300 }}>Australian take-back & recycling programs</p>
             <p style={{ color: "#6b7280", fontSize: "0.9rem", marginTop: 5, fontWeight: 300 }}>Help contribute by adding programs one-by-one through the Add or bulk through the Scraper buttons. Some information may become outdated, check program website for the most updated information.</p>
 
