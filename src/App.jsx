@@ -123,6 +123,7 @@ export default function App() {
 
   // Notification tracking
   const [lastProgramNotifyAt, setLastProgramNotifyAt] = useLocalStorage("last-program-notify", null);
+  const [loadError, setLoadError] = useState(null);
 
   // Load programs from shared KV database on mount
   useEffect(() => {
@@ -139,6 +140,7 @@ export default function App() {
         }
       } catch (err) {
         console.error('Failed to load programs, falling back to seed:', err);
+        setLoadError('Could not connect to database — showing default programs.');
         setPrograms(SEED_PROGRAMS);
       }
       setProgramsLoading(false);
@@ -146,10 +148,10 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (programs.length === 0) return;
+    if (programsLoading || programs.length === 0) return;
     const stale = programs.filter(p => !p.lastChecked || Date.now() - new Date(p.lastChecked).getTime() > 7 * 24 * 60 * 60 * 1000);
     if (stale.length > 0) runStatusCheck(programs, stale);
-  }, []);
+  }, [programsLoading]);
 
   const showToast = (msg, type = "success") => { setToast({ msg, type }); setTimeout(() => setToast(null), 3500); };
 
@@ -238,11 +240,12 @@ export default function App() {
     setTimeout(() => setSubmitDone(false), 4000);
   };
 
-  // Check program notifications whenever programs change
+  // Check program notifications whenever programs change (only after loaded)
   useEffect(() => {
+    if (programsLoading || programs.length === 0) return;
     const unverifiedCount = programs.filter(p => !p.verified).length;
     if (unverifiedCount >= 5) checkProgramNotify(unverifiedCount);
-  }, [programs.filter(p => !p.verified).length]);
+  }, [programsLoading, programs.length]);
 
   const runScraper = async () => {
     const urls = scrapeUrls.split(/[\n,]+/).map(u => u.trim()).filter(u => u.startsWith("http"));
@@ -365,6 +368,12 @@ export default function App() {
 
       {toast && (
         <div style={{ position: "fixed", top: 20, right: 20, zIndex: 9999, background: toast.type === "warn" ? "#3e2723" : "#2d6a2d", color: "#fff", padding: "12px 20px", borderRadius: 12, fontSize: "0.88rem", fontWeight: 500, boxShadow: "0 4px 20px rgba(0,0,0,0.15)", animation: "fadeIn 0.2s ease" }}>{toast.msg}</div>
+      )}
+
+      {loadError && (
+        <div style={{ background: "#fff3e0", borderBottom: "1px solid #ffe0b2", padding: "10px 20px", textAlign: "center", fontSize: "0.83rem", color: "#e65100" }}>
+          ⚠️ {loadError}
+        </div>
       )}
 
       {checking && (
