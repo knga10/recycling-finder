@@ -69,12 +69,9 @@ function useLocalStorage(key, defaultValue) {
 // API helpers for shared KV database
 async function apiGetPrograms() {
   const res = await fetch('/api/programs');
-  if (!res.ok) throw new Error('Failed to fetch programs');
   const data = await res.json();
   const programs = data.programs;
-  // Always return a safe array regardless of what came back
   if (Array.isArray(programs)) return programs;
-  if (programs && typeof programs === 'object') return Object.values(programs);
   return [];
 }
 
