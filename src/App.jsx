@@ -16,7 +16,7 @@ const SEED_PROGRAMS = [
   { id: "seed-13", company: "Pharmacies (RUM Project)", program: "Return Unwanted Medicines", category: "Pharmaceuticals", items: "medicine medication tablets pills capsules vitamins supplements expired medicine old prescription antibiotics paracetamol ibuprofen panadol nurofen over the counter drugs", itemsNot: "Sharps/needles, chemotherapy drugs, large volumes of liquid medications", cost: "Free", reward: "None", whatHappens: "Collected medicines safely incinerated at high temperatures to prevent environmental contamination.", howTo: "Take unwanted medicines in original packaging to any participating pharmacy.", website: "https://returnmed.com.au", notes: "Government-backed program. Available at most pharmacies across Australia.", coverage: "nationwide", locationFinderUrl: "https://returnmed.com.au/find-a-pharmacy", verified: true, status: "active", lastChecked: null, submittedBy: "seed" },
 ];
 
-const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD;
+const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || "recycle2026";
 const CATEGORIES = [
   "Batteries",
   "Beauty / Personal Care",
@@ -66,6 +66,24 @@ function useLocalStorage(key, defaultValue) {
   return [value, setAndStore];
 }
 
+// API helpers for shared KV database
+async function apiGetPrograms() {
+  const res = await fetch('/api/programs');
+  if (!res.ok) throw new Error('Failed to fetch programs');
+  const data = await res.json();
+  return data.programs || [];
+}
+
+async function apiAction(action, payload) {
+  const res = await fetch('/api/programs', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action, ...payload }),
+  });
+  if (!res.ok) throw new Error('API action failed');
+  return res.json();
+}
+
 function coverageLabel(coverage) {
   return COVERAGE_OPTIONS.find(o => o.value === coverage)?.label || "❓ Unknown";
 }
@@ -79,7 +97,8 @@ function coverageStyle(coverage) {
 
 export default function App() {
   const [view, setView] = useState("search");
-  const [programs, setPrograms] = useLocalStorage(STORAGE_KEY, SEED_PROGRAMS);
+  const [programs, setPrograms] = useState([]);
+  const [programsLoading, setProgramsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState(null);
   const [searching, setSearching] = useState(false);
@@ -105,7 +124,26 @@ export default function App() {
   // Notification tracking
   const [lastProgramNotifyAt, setLastProgramNotifyAt] = useLocalStorage("last-program-notify", null);
 
-  useEffect(() => { if (!programs || programs.length === 0) setPrograms(SEED_PROGRAMS); }, []);
+  // Load programs from shared KV database on mount
+  useEffect(() => {
+    (async () => {
+      setProgramsLoading(true);
+      try {
+        const loaded = await apiGetPrograms();
+        if (loaded.length === 0) {
+          // First time — seed the database
+          await apiAction('seed', { programs: SEED_PROGRAMS });
+          setPrograms(SEED_PROGRAMS);
+        } else {
+          setPrograms(loaded);
+        }
+      } catch (err) {
+        console.error('Failed to load programs, falling back to seed:', err);
+        setPrograms(SEED_PROGRAMS);
+      }
+      setProgramsLoading(false);
+    })();
+  }, []);
 
   useEffect(() => {
     if (programs.length === 0) return;
@@ -160,6 +198,7 @@ export default function App() {
       await new Promise(r => setTimeout(r, 400));
     }
     setPrograms(updated);
+    await apiAction('replace', { programs: updated });
     setCheckProgress({ done: toCheck.length, total: toCheck.length, current: "" });
     setChecking(false);
   };
@@ -191,6 +230,7 @@ export default function App() {
     setSubmitting(true);
     const newProgram = { ...form, id: `user-${Date.now()}`, verified: false, status: "active", lastChecked: null, submittedBy: "public", submittedAt: new Date().toISOString() };
     setPrograms(prev => [...prev, newProgram]);
+    await apiAction('add', { program: newProgram });
     setForm(EMPTY_FORM);
     setSubmitDone(true);
     setSubmitting(false);
@@ -241,22 +281,40 @@ export default function App() {
     setScraping(false);
   };
 
-  const addScrapedProgram = (program) => {
+  const addScrapedProgram = async (program) => {
     setPrograms(prev => [...prev, program]);
+    await apiAction('add', { program });
     setScrapeResults(prev => prev.map(r => r.program?.id === program.id ? { ...r, status: "added" } : r));
     showToast(`${program.company} added ✓`);
   };
 
-  const addAllScraped = () => {
+  const addAllScraped = async () => {
     const toAdd = scrapeResults.filter(r => r.status === "extracted" && r.program);
-    toAdd.forEach(r => setPrograms(prev => [...prev, r.program]));
+    const newPrograms = toAdd.map(r => r.program);
+    setPrograms(prev => [...prev, ...newPrograms]);
+    await apiAction('replace', { programs: [...programs, ...newPrograms] });
     setScrapeResults(prev => prev.map(r => r.status === "extracted" ? { ...r, status: "added" } : r));
     showToast(`${toAdd.length} programs added ✓`);
   };
 
-  const verifyProgram = (id) => { setPrograms(prev => prev.map(p => p.id === id ? { ...p, verified: true } : p)); showToast("Program verified ✓"); };
-  const removeProgram = (id) => { setPrograms(prev => prev.filter(p => p.id !== id)); showToast("Program removed", "warn"); };
-  const forceCheck = () => { const reset = programs.map(p => ({ ...p, lastChecked: null })); setPrograms(reset); runStatusCheck(reset, reset); };
+  const verifyProgram = async (id) => {
+    const updated = programs.map(p => p.id === id ? { ...p, verified: true } : p);
+    setPrograms(updated);
+    await apiAction('replace', { programs: updated });
+    showToast("Program verified ✓");
+  };
+  const removeProgram = async (id) => {
+    const updated = programs.filter(p => p.id !== id);
+    setPrograms(updated);
+    await apiAction('replace', { programs: updated });
+    showToast("Program removed", "warn");
+  };
+  const forceCheck = async () => {
+    const reset = programs.map(p => ({ ...p, lastChecked: null }));
+    setPrograms(reset);
+    await apiAction('replace', { programs: reset });
+    runStatusCheck(reset, reset);
+  };
 
   const unverified = programs.filter(p => !p.verified);
   const flagged = programs.filter(p => p.status === "possibly_inactive");
@@ -335,6 +393,13 @@ export default function App() {
         {/* ── SEARCH ── */}
         {view === "search" && (
           <div className="fade-in">
+            {programsLoading && (
+              <div style={{ textAlign: "center", padding: 48, color: "#6b7280" }}>
+                <div className="spin" style={{ width: 24, height: 24, border: "3px solid #c5d9c5", borderTopColor: "#2d6a2d", borderRadius: "50%", display: "inline-block", marginBottom: 12 }} />
+                <p style={{ fontSize: "0.9rem" }}>Loading programs…</p>
+              </div>
+            )}
+            {!programsLoading && (
             <div style={{ background: "#fff", border: "2px solid #c5d9c5", borderRadius: 18, display: "flex", overflow: "hidden", boxShadow: "0 4px 24px rgba(45,106,45,0.08)", marginBottom: 14 }}>
               <input style={{ flex: 1, border: "none", outline: "none", padding: "17px 20px", fontSize: "1.05rem", background: "transparent" }}
                 placeholder="e.g. old frying pan, mascara, AA batteries, sneakers…"
@@ -438,6 +503,7 @@ export default function App() {
           </div>
         )}
 
+            )}
         {/* ── SCRAPER ── */}
         {view === "scraper" && (
           <div className="fade-in">
@@ -620,7 +686,7 @@ export default function App() {
                 </div>
                 {adminError && <p style={{ color: "#c0392b", fontSize: "0.83rem", marginTop: 8 }}>{adminError}</p>}
                 <button className="submit-btn" style={{ marginTop: 14 }} onClick={() => adminPass === ADMIN_PASSWORD ? (setAdminAuthed(true), setAdminError("")) : setAdminError("Incorrect password")}>Unlock →</button>
-                <p style={{ color: "#9ca3af", fontSize: "0.75rem", marginTop: 10 }}></p>
+                
               </div>
             ) : (
               <div>
