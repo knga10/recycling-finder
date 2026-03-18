@@ -354,7 +354,7 @@ export default function App() {
         .pill-reward { background: #fdf6e3; color: #b8860b; }
         .pill-unverified { background: #fff3e0; color: #e65100; }
         .pill-inactive { background: #fce4ec; color: #880e4f; }
-        .chip { background: #eef4ee; border: 1px solid #c5d9c5; color: #3a6b3a; font-size: 0.8rem; padding: 5px 12px; border-radius: 20px; cursor: pointer; transition: all 0.15s; border: 1px solid #c5d9c5; }
+        .chip { background: #eef4ee; border: 1px solid #c5d9c5; color: #3a6b3a; font-size: 0.8rem; padding: 5px 12px; border-radius: 20px; cursor: pointer; transition: all 0.15s; }
         .chip:hover { background: #d4ebd4; border-color: #2d6a2d; }
         .field label { display: block; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.09em; color: #6b7280; font-weight: 600; margin-bottom: 5px; }
         .field input, .field textarea, .field select { width: 100%; border: 1.5px solid #dde8dd; border-radius: 10px; padding: 10px 13px; font-size: 0.9rem; background: #fff; color: #1a1a1a; transition: border-color 0.15s; outline: none; }
@@ -520,7 +520,6 @@ export default function App() {
           </div>
         )}
 
-            )}
         {/* ── SCRAPER ── */}
         {view === "scraper" && (
           <div className="fade-in">
@@ -541,7 +540,6 @@ export default function App() {
                 {scraping && scrapeProgress.current && <span style={{ fontSize: "0.78rem", color: "#6b7280", fontStyle: "italic", wordBreak: "break-all" }}>Fetching {scrapeProgress.current}</span>}
               </div>
             </div>
-
             {scrapeResults.length > 0 && (
               <div>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10, marginBottom: 16 }}>
@@ -592,7 +590,6 @@ export default function App() {
                 </div>
               </div>
             )}
-
             {scrapeResults.length === 0 && !scraping && (
               <div style={{ background: "#fff", border: "2px dashed #c5d9c5", borderRadius: 14, padding: "32px 24px" }}>
                 <p style={{ fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: "0.95rem", color: "#2d6a2d", marginBottom: 10 }}>💡 Tips</p>
@@ -607,7 +604,6 @@ export default function App() {
           </div>
         )}
 
-
         {/* ── FEEDBACK ── */}
         {view === "feedback" && (
           <div className="fade-in" style={{ maxWidth: 600 }}>
@@ -615,7 +611,6 @@ export default function App() {
               <h2 style={{ fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: "1.5rem", color: "#2d6a2d" }}>💬 Help us improve</h2>
               <p style={{ color: "#6b7280", fontSize: "0.88rem", marginTop: 6, lineHeight: 1.6 }}>3 quick questions — your answers help us make this more useful for everyone.</p>
             </div>
-
             {feedbackDone ? (
               <div style={{ background: "#e8f5e8", border: "1.5px solid #a5d6a5", borderRadius: 16, padding: "36px 28px", textAlign: "center" }}>
                 <div style={{ fontSize: "2.4rem", marginBottom: 12 }}>🌿</div>
@@ -625,12 +620,8 @@ export default function App() {
               </div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
-
-                {/* Q1 */}
                 <div style={{ background: "#fff", border: "1.5px solid #e0e8e0", borderRadius: 14, padding: "20px 22px" }}>
-                  <p style={{ fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: "0.98rem", color: "#1a1a1a", marginBottom: 14 }}>
-                    1. When you search for an item, how useful are the results you get back?
-                  </p>
+                  <p style={{ fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: "0.98rem", color: "#1a1a1a", marginBottom: 14 }}>1. When you search for an item, how useful are the results you get back?</p>
                   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                     {["Always find what I need", "Usually helpful but sometimes misses things", "Hit or miss", "Often doesn't find relevant programs"].map(opt => (
                       <label key={opt} style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", padding: "10px 14px", borderRadius: 10, border: `1.5px solid ${feedback.searchUsefulness === opt ? "#2d6a2d" : "#e0e8e0"}`, background: feedback.searchUsefulness === opt ? "#e8f5e8" : "#fafafa", transition: "all 0.15s" }}>
@@ -640,12 +631,8 @@ export default function App() {
                     ))}
                   </div>
                 </div>
-
-                {/* Q2 */}
                 <div style={{ background: "#fff", border: "1.5px solid #e0e8e0", borderRadius: 14, padding: "20px 22px" }}>
-                  <p style={{ fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: "0.98rem", color: "#1a1a1a", marginBottom: 6 }}>
-                    2. Which features would make this most useful to you?
-                  </p>
+                  <p style={{ fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: "0.98rem", color: "#1a1a1a", marginBottom: 6 }}>2. Which features would make this most useful to you?</p>
                   <p style={{ fontSize: "0.8rem", color: "#9ca3af", marginBottom: 14 }}>Select all that apply</p>
                   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                     {["Filter by my state / city", "Filter by free programs only", "Save or favourite programs", "Email alerts when new programs are added"].map(opt => {
@@ -659,12 +646,8 @@ export default function App() {
                     })}
                   </div>
                 </div>
-
-                {/* Q3 */}
                 <div style={{ background: "#fff", border: "1.5px solid #e0e8e0", borderRadius: 14, padding: "20px 22px" }}>
-                  <p style={{ fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: "0.98rem", color: "#1a1a1a", marginBottom: 14 }}>
-                    3. What's one thing that would make you recommend this site to a friend — or what's stopping you right now?
-                  </p>
+                  <p style={{ fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: "0.98rem", color: "#1a1a1a", marginBottom: 14 }}>3. What's one thing that would make you recommend this site to a friend — or what's stopping you right now?</p>
                   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                     {["I'd already recommend it", "Needs more programs listed", "Needs to be easier to use on mobile", "I'd need to trust the information more first"].map(opt => (
                       <label key={opt} style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", padding: "10px 14px", borderRadius: 10, border: `1.5px solid ${feedback.recommendBarrier === opt ? "#2d6a2d" : "#e0e8e0"}`, background: feedback.recommendBarrier === opt ? "#e8f5e8" : "#fafafa", transition: "all 0.15s" }}>
@@ -674,13 +657,7 @@ export default function App() {
                     ))}
                   </div>
                 </div>
-
-                <button
-                  className="submit-btn"
-                  disabled={feedbackSubmitting || !feedback.searchUsefulness || !feedback.recommendBarrier}
-                  onClick={submitFeedback}
-                  style={{ alignSelf: "flex-start" }}
-                >
+                <button className="submit-btn" disabled={feedbackSubmitting || !feedback.searchUsefulness || !feedback.recommendBarrier} onClick={submitFeedback} style={{ alignSelf: "flex-start" }}>
                   {feedbackSubmitting ? "Submitting…" : "Submit feedback →"}
                 </button>
                 <p style={{ fontSize: "0.78rem", color: "#9ca3af", marginTop: -16 }}>All responses are anonymous and go directly to the site admin.</p>
@@ -703,7 +680,6 @@ export default function App() {
                 </div>
                 {adminError && <p style={{ color: "#c0392b", fontSize: "0.83rem", marginTop: 8 }}>{adminError}</p>}
                 <button className="submit-btn" style={{ marginTop: 14 }} onClick={() => adminPass === ADMIN_PASSWORD ? (setAdminAuthed(true), setAdminError("")) : setAdminError("Incorrect password")}>Unlock →</button>
-                
               </div>
             ) : (
               <div>
@@ -742,122 +718,6 @@ export default function App() {
         )}
 
         <div style={{ height: 60 }} />
-      </div>
-    </div>
-  );
-}
-
-function ProgramCard({ program: p, delay = 0, compact = false }) {
-  const [expanded, setExpanded] = useState(!compact);
-  const isFree = p.cost?.toLowerCase() === "free";
-  const hasCost = p.cost && p.cost !== "Free" && p.cost !== "None";
-  const hasReward = p.reward && p.reward !== "None";
-  const cvgStyle = coverageStyle(p.coverage);
-
-  return (
-    <div className="card-in" onClick={compact ? () => setExpanded(v => !v) : undefined}
-      style={{ background: "#fff", border: "1.5px solid #e0e8e0", borderLeft: "4px solid #2d6a2d", borderRadius: 14, padding: compact ? "14px 18px" : "20px 22px", boxShadow: "0 2px 10px rgba(0,0,0,0.04)", animationDelay: `${delay}s`, cursor: compact ? "pointer" : "default" }}>
-
-      {/* Top row */}
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
-        <div>
-          <div style={{ fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: compact ? "0.98rem" : "1.1rem" }}>{p.company}</div>
-          <div style={{ fontSize: "0.82rem", color: "#6b7280", marginTop: 2 }}>{p.program}</div>
-        </div>
-        <div style={{ display: "flex", gap: 5, flexWrap: "wrap", alignItems: "center" }}>
-          <span className="pill pill-cat">{p.category}</span>
-          {p.coverage && <span className="pill" style={cvgStyle}>{coverageLabel(p.coverage)}</span>}
-          {isFree && <span className="pill pill-free">✓ Free</span>}
-          {hasCost && <span className="pill pill-cost">💰 Paid</span>}
-          {hasReward && <span className="pill pill-reward">🎁 Reward</span>}
-          {!p.verified && <span className="pill pill-unverified">Unverified</span>}
-          {p.status === "possibly_inactive" && <span className="pill pill-inactive">⚠ May be inactive</span>}
-        </div>
-      </div>
-
-      {p.status === "possibly_inactive" && p.statusReason && (
-        <div style={{ background: "#fce4ec", borderRadius: 8, padding: "7px 11px", marginTop: 10, fontSize: "0.8rem", color: "#880e4f" }}>⚠️ {p.statusReason}</div>
-      )}
-
-      {expanded && (
-        <div style={{ marginTop: 16 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px 20px" }}>
-            <div style={{ gridColumn: "1/-1" }}>
-              <span className="slabel">Items accepted</span>
-              <div style={{ fontSize: "0.86rem", color: "#374151", lineHeight: 1.5 }}>
-                {p.items?.split(" ").slice(0, 14).join(", ")}{p.items?.split(" ").length > 14 ? "…" : ""}
-              </div>
-            </div>
-            {p.itemsNot && (
-              <div style={{ gridColumn: "1/-1" }}>
-                <span className="slabel">Not accepted</span>
-                <div style={{ fontSize: "0.86rem", color: "#374151", lineHeight: 1.5 }}>{p.itemsNot}</div>
-              </div>
-            )}
-            <div>
-              <span className="slabel">Cost</span>
-              <div style={{ fontSize: "0.86rem", color: "#374151" }}>{p.cost}</div>
-            </div>
-            <div>
-              <span className="slabel">Reward / discount</span>
-              <div style={{ fontSize: "0.86rem", color: "#374151" }}>{p.reward || "None"}</div>
-            </div>
-            {p.whatHappens && (
-              <div style={{ gridColumn: "1/-1" }}>
-                <span className="slabel">What happens to your items</span>
-                <div style={{ fontSize: "0.86rem", color: "#374151", lineHeight: 1.5 }}>{p.whatHappens}</div>
-              </div>
-            )}
-            {p.howTo && (
-              <div style={{ gridColumn: "1/-1" }}>
-                <span className="slabel">How to participate</span>
-                <div style={{ fontSize: "0.86rem", color: "#374151", lineHeight: 1.5 }}>{p.howTo}</div>
-              </div>
-            )}
-            {p.notes && (
-              <div style={{ gridColumn: "1/-1" }}>
-                <span className="slabel">Notes</span>
-                <div style={{ fontSize: "0.83rem", color: "#6b7280", lineHeight: 1.5 }}>{p.notes}</div>
-              </div>
-            )}
-          </div>
-
-          {/* Links */}
-          <div style={{ marginTop: 14, display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" }}>
-            {p.website && (
-              <a className="ext-link" href={p.website} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}>
-                🔗 Program website ↗
-              </a>
-            )}
-            {p.locationFinderUrl && (
-              <a className="loc-btn" href={p.locationFinderUrl} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()}>
-                📍 Find drop-off locations ↗
-              </a>
-            )}
-          </div>
-
-          {p.lastChecked && <div style={{ marginTop: 10, fontSize: "0.71rem", color: "#c4c9d0" }}>Status checked {new Date(p.lastChecked).toLocaleDateString("en-AU")}</div>}
-        </div>
-      )}
-      {compact && <div style={{ marginTop: 6, fontSize: "0.73rem", color: "#9ca3af" }}>{expanded ? "▲ less" : "▼ more"}</div>}
-    </div>
-  );
-}
-
-function AdminRow({ program: p, onVerify, onRemove, flagMode = false }) {
-  return (
-    <div style={{ background: flagMode ? "#fff8f8" : "#fafafa", border: `1.5px solid ${flagMode ? "#f5c6cb" : "#e0e8e0"}`, borderRadius: 12, padding: "12px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-      <div>
-        <div style={{ fontWeight: 600, fontSize: "0.92rem" }}>{p.company} — <span style={{ fontWeight: 400, color: "#6b7280" }}>{p.program}</span></div>
-        <div style={{ fontSize: "0.78rem", color: "#9ca3af", marginTop: 2 }}>
-          {p.category} · {coverageLabel(p.coverage || "unknown")} · {p.submittedAt ? `Submitted ${new Date(p.submittedAt).toLocaleDateString("en-AU")}` : "Seed data"}
-          {p.status && p.status !== "active" && <span style={{ marginLeft: 6, color: "#880e4f" }}>· {p.status}</span>}
-          {p.statusReason && <span style={{ marginLeft: 6, color: "#880e4f" }}>"{p.statusReason}"</span>}
-        </div>
-      </div>
-      <div style={{ display: "flex", gap: 8 }}>
-        {!p.verified && <button onClick={() => onVerify(p.id)} style={{ background: "#e8f5e8", border: "1px solid #a5d6a5", color: "#1b5e1b", borderRadius: 8, padding: "6px 14px", fontSize: "0.82rem", fontWeight: 600, cursor: "pointer" }}>✓ Verify</button>}
-        <button onClick={() => onRemove(p.id)} style={{ background: "#fdecea", border: "1px solid #f5c6cb", color: "#c0392b", borderRadius: 8, padding: "6px 14px", fontSize: "0.82rem", fontWeight: 600, cursor: "pointer" }}>Remove</button>
       </div>
     </div>
   );
