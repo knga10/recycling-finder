@@ -31,10 +31,11 @@ async function kvSet(key, value) {
 
 export default async function handler(req, res) {
   console.log('[programs] invoked —', req.method)
+  console.log('[programs] env check — hasUrl:', !!KV_URL, 'hasToken:', !!KV_TOKEN)
 
   if (!KV_URL || !KV_TOKEN) {
-    console.error('[programs] missing KV env vars')
-    return res.status(500).json({ error: 'KV not configured' })
+    console.error('[programs] missing KV env vars — url:', KV_URL?.slice(0,20), 'token:', !!KV_TOKEN)
+    return res.status(500).json({ error: 'KV not configured', hasUrl: !!KV_URL, hasToken: !!KV_TOKEN })
   }
 
   // GET — return all programs
