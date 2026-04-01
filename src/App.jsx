@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Analytics } from "@vercel/analytics/react";
 
 const SEED_PROGRAMS = [
   { id: "seed-1", company: "Kitchen Warehouse", program: "The Great Pan Exchange", category: "Cookware", items: "pots pans baking trays frying pan wok casserole iron steel aluminium copper non-stick cookware", itemsNot: "Ceramic, glass, non-metal cookware", cost: "Free", reward: "10% off a new Tefal pan", whatHappens: "Metals stripped and recycled; every component including handles given a second life.", howTo: "Drop off old cookware at any Kitchen Warehouse store collection bin.", website: "https://www.kitchenwarehouse.com.au/the-great-pan-exchange", notes: "First dedicated cookware exchange in Australia", coverage: "nationwide", locationFinderUrl: "https://www.kitchenwarehouse.com.au/store-finder", verified: true, status: "active", lastChecked: null, submittedBy: "seed" },
@@ -718,6 +719,7 @@ export default function App() {
 
         <div style={{ height: 60 }} />
       </div>
+      <Analytics />
     </div>
   );
 }
