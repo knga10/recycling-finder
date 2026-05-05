@@ -1,23 +1,22 @@
 import { useState, useEffect } from "react";
-import { Analytics } from "@vercel/analytics/react";
 
 const SEED_PROGRAMS = [
   { id: "seed-1", company: "Kitchen Warehouse", program: "The Great Pan Exchange", category: "Cookware", items: "pots pans baking trays frying pan wok casserole iron steel aluminium copper non-stick cookware", itemsNot: "Ceramic, glass, non-metal cookware", cost: "Free", reward: "10% off a new Tefal pan", whatHappens: "Metals stripped and recycled; every component including handles given a second life.", howTo: "Drop off old cookware at any Kitchen Warehouse store collection bin.", website: "https://www.kitchenwarehouse.com.au/the-great-pan-exchange", notes: "First dedicated cookware exchange in Australia", coverage: "nationwide", locationFinderUrl: "https://www.kitchenwarehouse.com.au/store-finder", verified: true, status: "active", lastChecked: null, submittedBy: "seed" },
-  { id: "seed-2", company: "Tefal (via Myer)", program: "Act Together", category: "Cookware", items: "pots pans frying pan wok casserole iron steel aluminium copper cookware any brand", itemsNot: "Non-metal cookware, ceramic, glass", cost: "Free", reward: "None", whatHappens: "EcoCycle processes metals; aluminium, stainless steel, cast iron and copper recycled and repurposed.", howTo: "Drop off at designated bins in 14 selected Myer stores across Australian capital cities.", website: "https://www.tefal.com.au/act-together", notes: "Available at selected Myer stores in capital cities only", coverage: "selected-locations", locationFinderUrl: "", verified: true, status: "active", lastChecked: null, submittedBy: "seed" },
-  { id: "seed-3", company: "Officeworks", program: "Bring it Back", category: "Electronics / Stationery", items: "computer laptop monitor printer phone hard drive keyboard mouse cable ink toner cartridge pen marker stationery tablet electronics e-waste headphones charger", itemsNot: "Large appliances, toasters, hair dryers, vacuums, smoke detectors, broken screens, swollen batteries", cost: "Free for most small electronics; larger items may incur a small fee", reward: "Working phones/laptops/tablets can earn gift cards via Tech Trade-In", whatHappens: "Copper and steel processed by ANZ RP; plastics by Close the Loop; pens turned into outdoor furniture via TerraCycle & BIC.", howTo: "Drop off at dedicated bins in any of 173 Officeworks stores nationwide.", website: "https://www.officeworks.com.au/information/about-us/recycling", notes: "173 stores across Australia", coverage: "nationwide", locationFinderUrl: "https://www.officeworks.com.au/store-finder", verified: true, status: "active", lastChecked: null, submittedBy: "seed" },
-  { id: "seed-4", company: "MECCA", program: "Beauty Product Free Recycling (TerraCycle)", category: "Beauty / Personal Care", items: "makeup mascara foundation concealer lipstick lip gloss lip balm eyeliner eyeshadow blush skincare moisturiser serum toner cleanser shampoo conditioner perfume fragrance glass bottle beauty packaging cosmetics", itemsNot: "Outer cardboard packaging, items still containing product", cost: "Free", reward: "None", whatHappens: "Items cleaned, separated by material type; plastics recycled into raw formats for new products.", howTo: "Drop empties into TerraCycle collection bins at any MECCA store.", website: "https://www.mecca.com.au/beauty-loop/", notes: "1M+ empties diverted from landfill to date", coverage: "nationwide", locationFinderUrl: "https://www.mecca.com.au/store-finder", verified: true, status: "active", lastChecked: null, submittedBy: "seed" },
-  { id: "seed-5", company: "H&M", program: "Garment Collecting Program", category: "Clothing / Textiles", items: "clothing clothes shirt pants jeans dress jacket coat sweater jumper knitwear sportswear t-shirt tops skirt shorts accessories scarf hat gloves any brand garment textile worn ripped stained", itemsNot: "Underwear, wired bras, bags", cost: "Free", reward: "Reward voucher (~15% off next H&M purchase — confirm in-store)", whatHappens: "60% donated to charities; remainder shredded into insulation, cleaning cloths; ~0.1% woven into new material.", howTo: "Drop washed items into garment collection bins in H&M stores.", website: "https://www.hm.com/en_au/sustainability/garment-collecting.html", notes: "World's largest garment collecting program — active since 2013", coverage: "nationwide", locationFinderUrl: "https://www.hm.com/en_au/store-finder", verified: true, status: "active", lastChecked: null, submittedBy: "seed" },
-  { id: "seed-6", company: "Zara", program: "Textile Collection Program", category: "Clothing / Textiles", items: "clothing clothes shirt pants jeans dress jacket coat sweater jumper textile any condition garment", itemsNot: "Items in poor hygiene condition", cost: "Free", reward: "None", whatHappens: "Wearable items donated or sold second-hand; rest recycled into blankets, seat padding or other materials.", howTo: "Drop washed clothing into collection bins in select Zara stores.", website: "https://www.zara.com/au/en/z-sustainability-mkt1399.html", notes: "Available at select Zara stores", coverage: "selected-locations", locationFinderUrl: "https://www.zara.com/au/en/store-locator/stores", verified: true, status: "active", lastChecked: null, submittedBy: "seed" },
-  { id: "seed-7", company: "Uniqlo", program: "RE.UNIQLO / All-Product Recycling", category: "Clothing / Textiles", items: "uniqlo clothing fleece down jacket puffer thermal heattech airism uniqlo brand garment", itemsNot: "Other brands, underwear, socks", cost: "Free", reward: "None", whatHappens: "Wearable items donated to NGO partners globally; worn items recycled into new Uniqlo products.", howTo: "Drop off Uniqlo clothing at any Uniqlo store recycling bin.", website: "https://www.uniqlo.com/au/en/sustainability/environment/all-product-recycling/", notes: "Uniqlo-branded items only", coverage: "nationwide", locationFinderUrl: "https://www.uniqlo.com/au/en/store-finder", verified: true, status: "active", lastChecked: null, submittedBy: "seed" },
-  { id: "seed-8", company: "Macpac (via Upparel)", program: "Macpac Clothing Recycling", category: "Clothing / Textiles", items: "macpac jacket fleece outdoor clothing hiking gear activewear macpac brand", itemsNot: "Non-Macpac items, unwashed items", cost: "$35+ for a pickup collection (up to 10kg in 1 box)", reward: "$25 Macpac store voucher (first collection only; min. $100 spend)", whatHappens: "65% reused/donated; 35% upcycled or recycled into insulation and track surfaces.", howTo: "Book contactless pickup via Upparel or drop off at select Macpac store bins.", website: "https://www.macpac.com.au/sustainability/recycling", notes: "In partnership with Upparel. Pickup available nationally.", coverage: "nationwide", locationFinderUrl: "https://www.macpac.com.au/store-finder", verified: true, status: "active", lastChecked: null, submittedBy: "seed" },
+  { id: "seed-2", company: "Tefal (via Myer)", program: "Act Together", category: "Cookware", items: "pots pans frying pan wok casserole iron steel aluminium copper cookware any brand", itemsNot: "Non-metal cookware, ceramic, glass", cost: "Free", reward: "None", whatHappens: "EcoCycle processes metals; aluminium, stainless steel, cast iron and copper recycled and repurposed.", howTo: "Drop off at designated bins in 14 selected Myer stores across Australian capital cities.", website: "https://www.tefal.com.au/sustainability", notes: "Available at selected Myer stores in capital cities only", coverage: "selected-locations", locationFinderUrl: "https://www.myer.com.au/content/store-finder", verified: true, status: "active", lastChecked: null, submittedBy: "seed" },
+  { id: "seed-3", company: "Officeworks", program: "Bring it Back", category: "Electronics / Stationery", items: "computer laptop monitor printer phone hard drive keyboard mouse cable ink toner cartridge pen marker stationery tablet electronics e-waste headphones charger", itemsNot: "Large appliances, toasters, hair dryers, vacuums, smoke detectors, broken screens, swollen batteries", cost: "Free for most small electronics; larger items may incur a small fee", reward: "Working phones/laptops/tablets can earn gift cards via Tech Trade-In", whatHappens: "Copper and steel processed by ANZ RP; plastics by Close the Loop; pens turned into outdoor furniture via TerraCycle & BIC.", howTo: "Drop off at dedicated bins in any of 173 Officeworks stores nationwide.", website: "https://www.officeworks.com.au/information/about-us/recycling", notes: "173 stores across Australia", coverage: "nationwide", locationFinderUrl: "https://www.officeworks.com.au/shop/officeworks/storelocator", verified: true, status: "active", lastChecked: null, submittedBy: "seed" },
+  { id: "seed-4", company: "MECCA", program: "Beauty Product Free Recycling (TerraCycle)", category: "Beauty / Personal Care", items: "makeup mascara foundation concealer lipstick lip gloss lip balm eyeliner eyeshadow blush skincare moisturiser serum toner cleanser shampoo conditioner perfume fragrance glass bottle beauty packaging cosmetics", itemsNot: "Outer cardboard packaging, items still containing product", cost: "Free", reward: "None", whatHappens: "Items cleaned, separated by material type; plastics recycled into raw formats for new products.", howTo: "Drop empties into TerraCycle collection bins at any MECCA store.", website: "https://www.mecca.com/en-au/m-pact/planet/terracycle/", notes: "1M+ empties diverted from landfill to date", coverage: "nationwide", locationFinderUrl: "https://www.mecca.com/en-au/store-finder/", verified: true, status: "active", lastChecked: null, submittedBy: "seed" },
+  { id: "seed-5", company: "H&M", program: "Garment Collecting Program", category: "Clothing / Textiles", items: "clothing clothes shirt pants jeans dress jacket coat sweater jumper knitwear sportswear t-shirt tops skirt shorts accessories scarf hat gloves any brand garment textile worn ripped stained", itemsNot: "Underwear, wired bras, bags", cost: "Free", reward: "Reward voucher (~15% off next H&M purchase — confirm in-store)", whatHappens: "60% donated to charities; remainder shredded into insulation, cleaning cloths; ~0.1% woven into new material.", howTo: "Drop washed items into garment collection bins in H&M stores.", website: "https://www.hm.com/en_au/sustainability-at-hm/our-work/garment-collecting.html", notes: "World's largest garment collecting program — active since 2013", coverage: "nationwide", locationFinderUrl: "https://www.hm.com/en_au/store-finder/", verified: true, status: "active", lastChecked: null, submittedBy: "seed" },
+  { id: "seed-6", company: "Zara", program: "Textile Collection Program", category: "Clothing / Textiles", items: "clothing clothes shirt pants jeans dress jacket coat sweater jumper textile any condition garment", itemsNot: "Items in poor hygiene condition", cost: "Free", reward: "None", whatHappens: "Wearable items donated or sold second-hand; rest recycled into blankets, seat padding or other materials.", howTo: "Drop washed clothing into collection bins in select Zara stores.", website: "https://www.zara.com/au/en/z-sustainability-mkt1399.html", notes: "Available at select Zara stores", coverage: "selected-locations", locationFinderUrl: "https://www.zara.com/au/en/store-locator.html", verified: true, status: "active", lastChecked: null, submittedBy: "seed" },
+  { id: "seed-7", company: "Uniqlo", program: "RE.UNIQLO / All-Product Recycling", category: "Clothing / Textiles", items: "uniqlo clothing fleece down jacket puffer thermal heattech airism uniqlo brand garment", itemsNot: "Other brands, underwear, socks", cost: "Free", reward: "None", whatHappens: "Wearable items donated to NGO partners globally; worn items recycled into new Uniqlo products.", howTo: "Drop off Uniqlo clothing at any Uniqlo store recycling bin.", website: "https://www.uniqlo.com/au/en/contents/sustainability/planet/allproduct-recycle/", notes: "Uniqlo-branded items only", coverage: "nationwide", locationFinderUrl: "https://www.uniqlo.com/au/en/store-locator/", verified: true, status: "active", lastChecked: null, submittedBy: "seed" },
+  { id: "seed-8", company: "Macpac (via Upparel)", program: "Macpac Clothing Recycling", category: "Clothing / Textiles", items: "macpac jacket fleece outdoor clothing hiking gear activewear macpac brand", itemsNot: "Non-Macpac items, unwashed items", cost: "$35+ for a pickup collection (up to 10kg in 1 box)", reward: "$25 Macpac store voucher (first collection only; min. $100 spend)", whatHappens: "65% reused/donated; 35% upcycled or recycled into insulation and track surfaces.", howTo: "Book contactless pickup via Upparel or drop off at select Macpac store bins.", website: "https://www.macpac.com.au/sustainability/", notes: "In partnership with Upparel. Pickup available nationally.", coverage: "nationwide", locationFinderUrl: "https://www.upparel.com.au/macpac", verified: true, status: "active", lastChecked: null, submittedBy: "seed" },
   { id: "seed-9", company: "Banish (BRAD Program)", program: "BRAD — Banish Recycling and Diversion", category: "Hard-to-Recycle", items: "blister pack medicine foil pill pack toothpaste tube coffee pod bottle cap lid beauty packaging soft plastic chip bag wrapper cling wrap zip lock bag bread bag", itemsNot: "Batteries, pressurised canisters, aerosols, pesticides, oil paint, medical sharps, food waste, broken glass, hazardous", cost: "$15 per collection (includes postage label + recycling)", reward: "None", whatHappens: "Sorted by type and sent to Australian micro-recyclers; all waste recycled onshore.", howTo: "Purchase a BRAD collection label at banish.com.au, pack into a box/satchel, post via Australia Post.", website: "https://www.banish.com.au/pages/recycling-program", notes: "3.2M+ pieces diverted from landfill since 2020. Post from anywhere in Australia.", coverage: "mail-in", locationFinderUrl: "", verified: true, status: "active", lastChecked: null, submittedBy: "seed" },
   { id: "seed-10", company: "TerraCycle Australia", program: "Free Recycling Programs (brand-sponsored)", category: "Beauty / Household / Stationery", items: "garnier loreal maybelline schwarzkopf gillette razor beauty packaging dish soap air freshener glad bag writing pen bic pen marker highlighter shampoo bottle hair dye packaging beauty empty", itemsNot: "Wet items, hazardous materials, outer cardboard packaging", cost: "Free (programs funded by brand sponsors)", reward: "TerraCycle points per kg — redeemable as donations to schools/charities", whatHappens: "Sorted by material type; turned into park benches, bike racks, pet food bowls, outdoor furniture.", howTo: "Sign up at terracycle.com/en-AU, join relevant program, drop off at community hubs or mail with free prepaid label.", website: "https://www.terracycle.com/en-AU", notes: "Programs available in every postcode. Drop-off points vary by program.", coverage: "nationwide", locationFinderUrl: "https://www.terracycle.com/en-AU/brigades", verified: true, status: "active", lastChecked: null, submittedBy: "seed" },
-  { id: "seed-11", company: "Container Deposit Schemes", program: "Return and Earn / Containers for Change", category: "Beverage Containers", items: "aluminium can beer can soft drink can soda can sparkling water bottle plastic bottle juice bottle water bottle glass bottle drink bottle beverage container", itemsNot: "Milk cartons, juice cartons, wine bottles, spirit bottles, cordial, food cans", cost: "Free", reward: "10 cents refund per eligible container (cash, voucher or charity donation)", whatHappens: "Containers sorted; aluminium, glass and plastic recycled into new packaging and products.", howTo: "Return to a reverse vending machine, depot or authorised collection point in your state.", website: "https://www.containersforchange.com.au", notes: "ACT: actsmart.act.gov.au | NSW: returnandearnanywhere.com.au | QLD/WA/SA/TAS/NT: containersforchange.com.au", coverage: "nationwide", locationFinderUrl: "https://www.containersforchange.com.au/find-a-location", verified: true, status: "active", lastChecked: null, submittedBy: "seed" },
-  { id: "seed-12", company: "B-cycle", program: "Battery Recycling", category: "Batteries", items: "battery batteries AA AAA C D 9V button cell coin cell lithium ion rechargeable phone battery laptop battery power tool battery alkaline battery watch battery", itemsNot: "Car batteries, large industrial batteries", cost: "Free", reward: "None", whatHappens: "Batteries safely processed to recover lithium, cobalt, nickel, manganese for reuse in new batteries.", howTo: "Drop off at any B-cycle collection point — supermarkets, hardware stores, offices.", website: "https://b-cycle.com.au", notes: "National battery stewardship scheme. Collection points at most major supermarkets and hardware stores.", coverage: "nationwide", locationFinderUrl: "https://b-cycle.com.au/drop-off", verified: true, status: "active", lastChecked: null, submittedBy: "seed" },
-  { id: "seed-13", company: "Pharmacies (RUM Project)", program: "Return Unwanted Medicines", category: "Pharmaceuticals", items: "medicine medication tablets pills capsules vitamins supplements expired medicine old prescription antibiotics paracetamol ibuprofen panadol nurofen over the counter drugs", itemsNot: "Sharps/needles, chemotherapy drugs, large volumes of liquid medications", cost: "Free", reward: "None", whatHappens: "Collected medicines safely incinerated at high temperatures to prevent environmental contamination.", howTo: "Take unwanted medicines in original packaging to any participating pharmacy.", website: "https://returnmed.com.au", notes: "Government-backed program. Available at most pharmacies across Australia.", coverage: "nationwide", locationFinderUrl: "https://returnmed.com.au/find-a-pharmacy", verified: true, status: "active", lastChecked: null, submittedBy: "seed" },
+  { id: "seed-11", company: "Container Deposit Schemes", program: "Return and Earn / Containers for Change", category: "Beverage Containers", items: "aluminium can beer can soft drink can soda can sparkling water bottle plastic bottle juice bottle water bottle glass bottle drink bottle beverage container", itemsNot: "Milk cartons, juice cartons, wine bottles, spirit bottles, cordial, food cans", cost: "Free", reward: "10 cents refund per eligible container (cash, voucher or charity donation)", whatHappens: "Containers sorted; aluminium, glass and plastic recycled into new packaging and products.", howTo: "Return to a reverse vending machine, depot or authorised collection point in your state.", website: "https://www.containersforchange.com.au", notes: "ACT: actsmart.act.gov.au | NSW: returnandearnanywhere.com.au | QLD/WA/SA/TAS/NT: containersforchange.com.au", coverage: "nationwide", locationFinderUrl: "https://www.containersforchange.com.au/find-a-location/", verified: true, status: "active", lastChecked: null, submittedBy: "seed" },
+  { id: "seed-12", company: "B-cycle", program: "Battery Recycling", category: "Batteries", items: "battery batteries AA AAA C D 9V button cell coin cell lithium ion rechargeable phone battery laptop battery power tool battery alkaline battery watch battery", itemsNot: "Car batteries, large industrial batteries", cost: "Free", reward: "None", whatHappens: "Batteries safely processed to recover lithium, cobalt, nickel, manganese for reuse in new batteries.", howTo: "Drop off at any B-cycle collection point — supermarkets, hardware stores, offices.", website: "https://bcycle.com.au", notes: "National battery stewardship scheme. Collection points at most major supermarkets and hardware stores.", coverage: "nationwide", locationFinderUrl: "https://bcycle.com.au/drop-off/", verified: true, status: "active", lastChecked: null, submittedBy: "seed" },
+  { id: "seed-13", company: "Pharmacies (RUM Project)", program: "Return Unwanted Medicines", category: "Pharmaceuticals", items: "medicine medication tablets pills capsules vitamins supplements expired medicine old prescription antibiotics paracetamol ibuprofen panadol nurofen over the counter drugs", itemsNot: "Sharps/needles, chemotherapy drugs, large volumes of liquid medications", cost: "Free", reward: "None", whatHappens: "Collected medicines safely incinerated at high temperatures to prevent environmental contamination.", howTo: "Take unwanted medicines in original packaging to any participating pharmacy.", website: "https://returnmed.com.au", notes: "Government-backed program. Available at most pharmacies across Australia.", coverage: "nationwide", locationFinderUrl: "https://returnmed.com.au/find-a-pharmacy/", verified: true, status: "active", lastChecked: null, submittedBy: "seed" },
 ];
 
-const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD;
+const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || "recycle2026";
 const CATEGORIES = [
   "Batteries",
   "Beauty / Personal Care",
@@ -86,6 +85,33 @@ async function apiAction(action, payload) {
   return res.json();
 }
 
+function trackEvent(eventName, params = {}) {
+  if (typeof window !== 'undefined' && typeof window.gtag === 'function') {
+    window.gtag('event', eventName, params);
+  }
+}
+
+// Returns programs that look similar to the candidate
+function findSimilarPrograms(candidate, existingPrograms) {
+  if (!candidate?.company) return [];
+  const normalize = str => (str || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const candidateCompany = normalize(candidate.company);
+  const candidateProgram = normalize(candidate.program);
+  return existingPrograms.filter(p => {
+    const existingCompany = normalize(p.company);
+    const existingProgram = normalize(p.program);
+    // Exact company match, or company name is contained within each other
+    const companyMatch = existingCompany === candidateCompany ||
+      existingCompany.includes(candidateCompany) ||
+      candidateCompany.includes(existingCompany);
+    // Also check program name similarity if company matches partially
+    const programMatch = existingProgram === candidateProgram ||
+      existingProgram.includes(candidateProgram) ||
+      candidateProgram.includes(existingProgram);
+    return companyMatch && (candidateProgram ? programMatch : true);
+  });
+}
+
 function coverageLabel(coverage) {
   return COVERAGE_OPTIONS.find(o => o.value === coverage)?.label || "❓ Unknown";
 }
@@ -122,6 +148,10 @@ export default function App() {
   const [feedback, setFeedback] = useState({ searchUsefulness: "", featuresWanted: [], recommendBarrier: "" });
   const [feedbackSubmitting, setFeedbackSubmitting] = useState(false);
   const [feedbackDone, setFeedbackDone] = useState(false);
+
+  // Duplicate detection
+  const [submitDuplicates, setSubmitDuplicates] = useState([]);
+  const [submitBypassDuplicate, setSubmitBypassDuplicate] = useState(false);
 
   // Notification tracking
   const [lastProgramNotifyAt, setLastProgramNotifyAt] = useLocalStorage("last-program-notify", null);
@@ -168,6 +198,10 @@ export default function App() {
     setFeedbackSubmitting(true);
     try {
       await callNotify("feedback", { ...feedback, timestamp: new Date().toISOString() });
+      trackEvent('feedback_submitted', {
+        search_usefulness: feedback.searchUsefulness,
+        recommend_barrier: feedback.recommendBarrier,
+      });
       setFeedbackDone(true);
       setFeedback({ searchUsefulness: "", featuresWanted: [], recommendBarrier: "" });
     } catch {}
@@ -221,21 +255,44 @@ export default function App() {
       const result = JSON.parse(raw.replace(/```json|```/g, "").trim());
       const matched = (result.matched || []).map(id => active.find(p => p.id === id)).filter(Boolean);
       setSearchResults({ programs: matched, summary: result.summary, tip: result.tip });
+      trackEvent('search', {
+        search_term: q,
+        results_count: matched.length,
+        found_results: matched.length > 0,
+      });
     } catch {
       const q2 = q.toLowerCase();
       const fallback = active.filter(p => p.items?.toLowerCase().includes(q2) || p.category?.toLowerCase().includes(q2) || p.company?.toLowerCase().includes(q2));
       setSearchResults({ programs: fallback, summary: `Results for "${q}"`, tip: null });
+      trackEvent('search', { search_term: q, results_count: fallback.length, found_results: fallback.length > 0, fallback: true });
     }
     setSearching(false);
   };
 
   const submitProgram = async () => {
     if (!form.company || !form.program || !form.category || !form.items) return;
+
+    // Check for duplicates unless user has explicitly bypassed
+    if (!submitBypassDuplicate) {
+      const dupes = findSimilarPrograms(form, programs);
+      if (dupes.length > 0) {
+        setSubmitDuplicates(dupes);
+        return;
+      }
+    }
+
     setSubmitting(true);
+    setSubmitDuplicates([]);
+    setSubmitBypassDuplicate(false);
     const newProgram = { ...form, id: `user-${Date.now()}`, verified: false, status: "active", lastChecked: null, submittedBy: "public", submittedAt: new Date().toISOString() };
     await apiAction('add', { program: newProgram });
     const refreshed = await apiGetPrograms();
     setPrograms(refreshed);
+    trackEvent('program_submitted', {
+      company: newProgram.company,
+      category: newProgram.category,
+      coverage: newProgram.coverage,
+    });
     setForm(EMPTY_FORM);
     setSubmitDone(true);
     setSubmitting(false);
@@ -291,18 +348,28 @@ export default function App() {
     await apiAction('add', { program });
     const refreshed = await apiGetPrograms();
     setPrograms(refreshed);
+    trackEvent('program_scraped', { company: program.company, category: program.category });
     setScrapeResults(prev => prev.map(r => r.program?.id === program.id ? { ...r, status: "added" } : r));
     showToast(`${program.company} added ✓`);
   };
 
   const addAllScraped = async () => {
     const toAdd = scrapeResults.filter(r => r.status === "extracted" && r.program);
-    const newPrograms = toAdd.map(r => r.program);
-    await apiAction('replace', { programs: [...programs, ...newPrograms] });
-    const refreshed = await apiGetPrograms();
-    setPrograms(refreshed);
+    // Skip programs that are duplicates of existing ones
+    const nonDupes = toAdd.filter(r => findSimilarPrograms(r.program, programs).length === 0);
+    const dupeCount = toAdd.length - nonDupes.length;
+    const newPrograms = nonDupes.map(r => r.program);
+    if (newPrograms.length > 0) {
+      await apiAction('replace', { programs: [...programs, ...newPrograms] });
+      const refreshed = await apiGetPrograms();
+      setPrograms(refreshed);
+    }
+    trackEvent('programs_bulk_scraped', { count: newPrograms.length, dupes_skipped: dupeCount });
     setScrapeResults(prev => prev.map(r => r.status === "extracted" ? { ...r, status: "added" } : r));
-    showToast(`${toAdd.length} programs added ✓`);
+    const msg = dupeCount > 0
+      ? `${newPrograms.length} added, ${dupeCount} duplicate${dupeCount > 1 ? "s" : ""} skipped`
+      : `${newPrograms.length} programs added ✓`;
+    showToast(msg);
   };
 
   const verifyProgram = async (id) => {
@@ -393,8 +460,6 @@ export default function App() {
           <div>
             <h1 style={{ fontFamily: "'Syne', sans-serif", fontWeight: 800, fontSize: "clamp(1.8rem,4vw,2.6rem)", color: "#2d6a2d", letterSpacing: "-0.03em", lineHeight: 1.05 }}>♻️ Can I recycle this?</h1>
             <p style={{ color: "#6b7280", fontSize: "0.9rem", marginTop: 5, fontWeight: 300 }}>Australian take-back & recycling programs</p>
-            <p style={{ color: "#6b7280", fontSize: "0.9rem", marginTop: 5, fontWeight: 300 }}>Help contribute by adding programs one-by-one through the Add or bulk through the Scraper buttons. Some information may become outdated, check program website for the most updated information.</p>
-
           </div>
           <nav style={{ display: "flex", gap: 4, background: "#fff", border: "1.5px solid #dde8dd", borderRadius: 14, padding: 5, flexWrap: "wrap" }}>
             <button className={`nav-btn${view === "search" ? " active" : ""}`} onClick={() => setView("search")}>🔍 Search</button>
@@ -514,9 +579,36 @@ export default function App() {
               </div>
               <div className="field"><label>Notes</label><input value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder="Any extra context, caveats, state restrictions…" /></div>
             </div>
-            <button className="submit-btn" style={{ marginTop: 24 }} disabled={submitting || !form.company || !form.program || !form.category || !form.items} onClick={submitProgram}>
-              {submitting ? "Submitting…" : "Submit program →"}
-            </button>
+            {submitDuplicates.length > 0 && (
+              <div style={{ background: "#fff8e1", border: "1.5px solid #ffe082", borderRadius: 12, padding: "16px 18px", marginTop: 16 }}>
+                <p style={{ fontFamily: "'Syne',sans-serif", fontWeight: 700, fontSize: "0.9rem", color: "#f57f17", marginBottom: 10 }}>
+                  ⚠️ Similar program{submitDuplicates.length > 1 ? "s" : ""} already exist
+                </p>
+                {submitDuplicates.map(d => (
+                  <div key={d.id} style={{ background: "#fff", borderRadius: 8, padding: "10px 12px", marginBottom: 8, fontSize: "0.84rem" }}>
+                    <strong>{d.company}</strong> — {d.program}
+                    <span style={{ marginLeft: 8, color: "#6b7280" }}>{d.category}</span>
+                  </div>
+                ))}
+                <p style={{ fontSize: "0.82rem", color: "#6b7280", marginTop: 8, marginBottom: 12 }}>
+                  Is this a different program? You can still submit it.
+                </p>
+                <div style={{ display: "flex", gap: 10 }}>
+                  <button onClick={() => { setSubmitBypassDuplicate(true); submitProgram(); }} style={{ background: "#2d6a2d", color: "#fff", border: "none", borderRadius: 8, padding: "8px 16px", fontSize: "0.84rem", fontWeight: 600, cursor: "pointer" }}>
+                    Submit anyway →
+                  </button>
+                  <button onClick={() => setSubmitDuplicates([])} style={{ background: "#f5f5f5", color: "#374151", border: "1px solid #e0e0e0", borderRadius: 8, padding: "8px 16px", fontSize: "0.84rem", cursor: "pointer" }}>
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {submitDuplicates.length === 0 && (
+              <button className="submit-btn" style={{ marginTop: 24 }} disabled={submitting || !form.company || !form.program || !form.category || !form.items} onClick={submitProgram}>
+                {submitting ? "Submitting…" : "Submit program →"}
+              </button>
+            )}
           </div>
         )}
 
@@ -562,9 +654,21 @@ export default function App() {
                           {r.status === "not_a_program" && <div style={{ fontSize: "0.8rem", color: "#e65100", marginTop: 4 }}>⚠️ No recycling program found</div>}
                           {r.status === "added" && <div style={{ fontSize: "0.8rem", color: "#2d6a2d", marginTop: 4 }}>✅ Added — {r.program?.company} / {r.program?.program}</div>}
                         </div>
-                        {r.status === "extracted" && r.program && (
-                          <button onClick={() => addScrapedProgram(r.program)} style={{ background: "#2d6a2d", color: "#fff", border: "none", borderRadius: 8, padding: "7px 16px", fontSize: "0.82rem", fontWeight: 600, cursor: "pointer" }}>➕ Add</button>
-                        )}
+                        {r.status === "extracted" && r.program && (() => {
+                          const dupes = findSimilarPrograms(r.program, programs);
+                          return (
+                            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
+                              {dupes.length > 0 && (
+                                <span style={{ background: "#fff8e1", border: "1px solid #ffe082", color: "#f57f17", borderRadius: 20, padding: "2px 10px", fontSize: "0.73rem", fontWeight: 600, whiteSpace: "nowrap" }}>
+                                  ⚠️ Similar: {dupes[0].company}
+                                </span>
+                              )}
+                              <button onClick={() => addScrapedProgram(r.program)} style={{ background: dupes.length > 0 ? "#6b7280" : "#2d6a2d", color: "#fff", border: "none", borderRadius: 8, padding: "7px 16px", fontSize: "0.82rem", fontWeight: 600, cursor: "pointer" }}>
+                                {dupes.length > 0 ? "Add anyway" : "➕ Add"}
+                              </button>
+                            </div>
+                          );
+                        })()}
                       </div>
                       {r.program && r.status === "extracted" && (
                         <div style={{ background: "#f7faf7", borderRadius: 8, padding: "12px 14px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px 16px" }}>
@@ -719,7 +823,6 @@ export default function App() {
 
         <div style={{ height: 60 }} />
       </div>
-      <Analytics />
     </div>
   );
 }
